@@ -1,0 +1,402 @@
+{
+  "contract_name": "Joyso",
+  "abi": [
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getBalance",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "take",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "withdraw",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "token",
+          "type": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "depositToken",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "token",
+          "type": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "withdrawToken",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "testOrder",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "token",
+          "type": "address"
+        },
+        {
+          "name": "receiver",
+          "type": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "transfer",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "",
+          "type": "address"
+        },
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "balances",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "make",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "deposit",
+      "outputs": [],
+      "payable": true,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "cancel",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "payable": false,
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "token",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "balance",
+          "type": "uint256"
+        }
+      ],
+      "name": "Deposit",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "token",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "user",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "balance",
+          "type": "uint256"
+        }
+      ],
+      "name": "Withdraw",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "token",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "senderBalance",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "reveiver",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "receriverBalance",
+          "type": "uint256"
+        }
+      ],
+      "name": "Transfer",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "previousOwner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnershipTransferred",
+      "type": "event"
+    }
+  ],
+  "unlinked_binary": "0x6060604052341561000f57600080fd5b5b5b60008054600160a060020a03191633600160a060020a03161790555b5b5b6109e08061003e6000396000f300606060405236156100a95763ffffffff60e060020a60003504166312065fe081146100ae578063159090bd146100ae5780632e1a7d4d146100d8578063338b5dea146100f05780638da5cb5b146101145780639e281a9814610143578063a05775d4146100ae578063beabacc81461017c578063c23f001f146101a6578063c6dad082146100ae578063d0e30db0146101f2578063ea8a1af0146100ae578063f2fde38b14610211575b600080fd5b34156100b957600080fd5b6100c1610232565b005b34156100b957600080fd5b6100c1610232565b005b34156100e357600080fd5b6100c1600435610238565b005b34156100fb57600080fd5b6100c1600160a060020a0360043516602435610374565b005b341561011f57600080fd5b6101276104db565b604051600160a060020a03909116815260200160405180910390f35b341561014e57600080fd5b6100c1600160a060020a03600435166024356104ea565b005b34156100b957600080fd5b6100c1610232565b005b341561018757600080fd5b6100c1600160a060020a036004358116906024351660443561069b565b005b34156101b157600080fd5b6101cb600160a060020a03600435811690602435166107eb565b60405190815260200160405180910390f35b34156100b957600080fd5b6100c1610232565b005b6100c161080b565b005b34156100b957600080fd5b6100c1610232565b005b341561021c57600080fd5b6100c1600160a060020a03600435166108ca565b005b5b565b5b565b33600160a060020a0316600090815260008051602061099583398151915260205260409020548190101561026b57600080fd5b33600160a060020a0316600090815260008051602061099583398151915260205260409020546102a1908263ffffffff61096316565b33600160a060020a03166000818152600080516020610995833981519152602052604090819020929092559082905160006040518083038185876187965a03f19250505015156102f057600080fd5b33600160a060020a03811660009081526000805160206109958339815191526020526040808220547ff341246adaac6f497bc2a656f546ab9e182111d630394f0c57c710a59a2cb567939185919051600160a060020a0394851681529290931660208301526040808301919091526060820192909252608001905180910390a15b50565b600160a060020a038216151561038957600080fd5b81600160a060020a03166323b872dd33308460006040516020015260405160e060020a63ffffffff8616028152600160a060020a0393841660048201529190921660248201526044810191909152606401602060405180830381600087803b15156103f357600080fd5b6102c65a03f1151561040457600080fd5b50505060405180519050151561041957600080fd5b600160a060020a0380831660009081526001602090815260408083203390941683529290522054610450908263ffffffff61097a16565b600160a060020a038381166000908152600160209081526040808320339485168452909152908190208390557fdcbc1c05240f31ff3ad067ef1ee35ce4997762752e3a095284754544f4c709d79285929185919051600160a060020a0394851681529290931660208301526040808301919091526060820192909252608001905180910390a15b5050565b600054600160a060020a031681565b600160a060020a03821615156104ff57600080fd5b600160a060020a03808316600090815260016020908152604080832033909416835292905220548190101561053357600080fd5b600160a060020a038083166000908152600160209081526040808320339094168352929052205461056a908263ffffffff61096316565b600160a060020a03808416600081815260016020908152604080832033958616845290915280822094909455909263a9059cbb92918591516020015260405160e060020a63ffffffff8516028152600160a060020a0390921660048301526024820152604401602060405180830381600087803b15156105e957600080fd5b6102c65a03f115156105fa57600080fd5b50505060405180519050151561060f57600080fd5b600160a060020a03808316600090815260016020908152604080832033948516845290915290819020547ff341246adaac6f497bc2a656f546ab9e182111d630394f0c57c710a59a2cb5679285929091859151600160a060020a0394851681529290931660208301526040808301919091526060820192909252608001905180910390a15b5050565b5b565b600160a060020a0380841660009081526001602090815260408083203390941683529290522054819010156106cf57600080fd5b600160a060020a0380841660009081526001602090815260408083203390941683529290522054610706908263ffffffff61096316565b600160a060020a03848116600090815260016020908152604080832033851684529091528082209390935590841681522054610742908261097a565b600160a060020a038481166000908152600160209081526040808320878516808552925280832085905533938416835280832054919092527f29c199f50ce76b0c1dca77e3f332fcdfc5e44f16ed003a7170b0b3197a15faa593879392869291889151600160a060020a03968716815294861660208601526040808601949094526060850192909252909316608083015260a082019290925260c001905180910390a15b505050565b600160209081526000928352604080842090915290825290205481565b5b565b33600160a060020a031660009081526000805160206109958339815191526020526040902054610841903463ffffffff61097a16565b33600160a060020a038116600090815260008051602061099583398151915260205260408082208490557fdcbc1c05240f31ff3ad067ef1ee35ce4997762752e3a095284754544f4c709d793919291349151600160a060020a0394851681529290931660208301526040808301919091526060820192909252608001905180910390a15b565b5b565b60005433600160a060020a039081169116146108e557600080fd5b600160a060020a03811615156108fa57600080fd5b600054600160a060020a0380831691167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e060405160405180910390a36000805473ffffffffffffffffffffffffffffffffffffffff1916600160a060020a0383161790555b5b50565b60008282111561096f57fe5b508082035b92915050565b60008282018381101561098957fe5b8091505b50929150505600a6eef7e35abe7026729641147f7915573c7e97b47efa546f5f6e3230263bcb49a165627a7a7230582043308a6438d3aac76a5b3b342539affdb03e91c06a2811adcbec2d32f21c48350029",
+  "networks": {
+    "17": {
+      "events": {
+        "0xdcbc1c05240f31ff3ad067ef1ee35ce4997762752e3a095284754544f4c709d7": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "token",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "sender",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "amount",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "balance",
+              "type": "uint256"
+            }
+          ],
+          "name": "Deposit",
+          "type": "event"
+        },
+        "0xf341246adaac6f497bc2a656f546ab9e182111d630394f0c57c710a59a2cb567": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "token",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "user",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "amount",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "balance",
+              "type": "uint256"
+            }
+          ],
+          "name": "Withdraw",
+          "type": "event"
+        },
+        "0x29c199f50ce76b0c1dca77e3f332fcdfc5e44f16ed003a7170b0b3197a15faa5": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "token",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "sender",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "amount",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "senderBalance",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "reveiver",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "receriverBalance",
+              "type": "uint256"
+            }
+          ],
+          "name": "Transfer",
+          "type": "event"
+        },
+        "0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "previousOwner",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "name": "newOwner",
+              "type": "address"
+            }
+          ],
+          "name": "OwnershipTransferred",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0x62d69f6867a0a084c6d313943dc22023bc263691",
+      "updated_at": 1507794378622
+    }
+  },
+  "schema_version": "0.0.5",
+  "updated_at": 1507794378622
+}
