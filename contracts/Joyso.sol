@@ -83,8 +83,8 @@ contract Joyso is Ownable {
     }
 
     // helper functions
-    function getBalance () public constant {
-
+    function getBalance (address token, address account) public constant returns (uint256) {
+        return balances[token][account];
     }
 
     function testOrder () public constant {
