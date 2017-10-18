@@ -1,4 +1,4 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.15;
 
 import "./lib/SafeMath.sol";
 import "./lib/Ownable.sol";
@@ -11,16 +11,12 @@ contract Joyso is Ownable {
     using SafeMath for uint256;
 
     mapping (address => mapping (address => uint)) public balances;
+    mapping (address => mapping (bytes32 => bool)) public orderBook;
 
     //events
     event Deposit (address token, address sender, uint256 amount, uint256 balance);
     event Withdraw(address token, address user, uint256 amount, uint256 balance);
     event Transfer (address token, address sender, uint256 amount, uint256 senderBalance, address reveiver, uint256 receriverBalance);
-
-
-    function Joyso () public {
-
-    }
 
     /** Deposit or depositToken allow user to store the funds in Joyso contract.
       * It is more convenient to transfer funds or to trade in contract.
@@ -60,7 +56,7 @@ contract Joyso is Ownable {
     }
 
     /** Transfer funds in contract.
-      * using token = 0 to transfer ether.
+      * using token = 0x to transfer ether.
       */
     function transfer (address token, address receiver, uint256 amount) public {
         require (balances[token][msg.sender] >= amount);
@@ -70,11 +66,17 @@ contract Joyso is Ownable {
         Transfer(token, msg.sender, amount, balances[token][msg.sender], receiver, balances[token][receiver]);
     }
 
-    function make () public {
+    function make (address tokenSell, address tokenGet, uint256 price, uint256 expires, uint256 nonce) public {
+        bytes32 hash = keccak256(tokenSell, tokenGet, price, expires, nonce);
+        orderBook[msg.sender][hash] = true;
 
+        //event
     }
 
-    function take () public {
+    function take (address tokenSell, address tokenGet, uint256 price, uint256 expires, uint nonce, 
+                   address seller, uint8 v, bytes32 r, bytes32 s, uint amount) public {
+        bytes32 hash = keccak256(tokenSell, tokenGet, price, expires, nonce);
+        require(validate(hash, seller, v, r, s));
 
     }
 
@@ -91,8 +93,9 @@ contract Joyso is Ownable {
 
     }
 
-    // internal functions
-    function validate () private {
-
+    function validate (bytes32 hash, address sender, uint8 v, bytes32 r, bytes32 s) public returns (bool) {
+        bytes memory prefix = "\x19Ethereum Signed Message:\n32";
+        bytes32 prefixedHash = keccak256(prefix, hash);
+        return ecrecover(prefixedHash, v, r, s) == sender;
     }
 }
