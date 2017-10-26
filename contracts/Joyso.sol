@@ -10,14 +10,23 @@ import {StandardToken as Token} from "./lib/StandardToken.sol";
 contract Joyso is Ownable {
     using SafeMath for uint256;
 
-    mapping (address => mapping (address => uint)) public balances;
+    mapping (address => mapping (address => uint256)) public balances;
     mapping (address => mapping (bytes32 => bool)) public orderBook;
+    mapping (address => mapping (uint256 => bool)) public dependency;
+    mapping (bytes32 => uint256) public remain;
 
     //events
     event Deposit (address token, address sender, uint256 amount, uint256 balance);
     event Withdraw(address token, address user, uint256 amount, uint256 balance);
     event Transfer (address token, address sender, uint256 amount, uint256 senderBalance, address reveiver, uint256 receriverBalance);
 
+    /** Event for take fails
+      * 1: the order is filled 
+      * 2: maker's balance is not enough
+      * 3:
+      */
+    event Fail(uint8 index, address maker, address tokenSell, address tokenBuy, uint256 price, uint256 amount, uint256 expires, uint256 nonce);
+ 
     /** Deposit or depositToken allow user to store the funds in Joyso contract.
       * It is more convenient to transfer funds or to trade in contract.
       * Besure to approve the contract to move your erc20 token if depositToken.
@@ -56,7 +65,7 @@ contract Joyso is Ownable {
     }
 
     /** Transfer funds in contract.
-      * using token = 0x to transfer ether.
+      * Using token = 0x to transfer ether.
       */
     function transfer (address token, address receiver, uint256 amount) public {
         require (balances[token][msg.sender] >= amount);
@@ -66,17 +75,61 @@ contract Joyso is Ownable {
         Transfer(token, msg.sender, amount, balances[token][msg.sender], receiver, balances[token][receiver]);
     }
 
-    function make (address tokenSell, address tokenGet, uint256 price, uint256 expires, uint256 nonce) public {
-        bytes32 hash = keccak256(tokenSell, tokenGet, price, expires, nonce);
+    function make (address tokenSell, address tokenBuy, uint256 amountSell, uint256 amountBuy, uint256 expires, uint256 nonce) public {
+        // simple check first, if these not pass, there is no need to watse more gas 
+        require(balances[tokenSell][msg.sender] >= amount);
+        require(block.number <= expires);
+        require(nonce == 0 || dependency[msg.sender][nonce] == false); // nonce = 0 to ignore dependency check 
+
+        bytes32 hash = keccak256(msg.sender, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce);
+        assert(orderBook[msg.sender][hash] = false); // This should be a new order.
         orderBook[msg.sender][hash] = true;
+        dependency[msg.sender][nonce] = true;
+        assert(remain[hash] == 0); // a new order should ramain nothing. 
+        remain[hash] = amount;
 
         //event
     }
 
-    function take (address tokenSell, address tokenGet, uint256 price, uint256 expires, uint nonce, 
-                   address seller, uint8 v, bytes32 r, bytes32 s, uint amount) public {
-        bytes32 hash = keccak256(tokenSell, tokenGet, price, expires, nonce);
-        require(validate(hash, seller, v, r, s));
+    function take (address maker, address tokenSell, address tokenBuy, uint256 amountSell, uint256 amountBuy, uint256 expires, uint256 nonce, 
+                uint8 v, bytes32 r, bytes32 s, uint256 amountTake, bool turnToOrder) public 
+    {
+        // simple check first, if these not pass, there is no need to waste more gas
+        require(block.number <= expires);
+        require(balances[tokenBuy][msg.sender] >= amountTake);
+        require(amountTake <= amountBuy);
+        require(nonce == 0 || dependency[maker][nonce] == false);    // check dependency
+
+        bytes32 hash = keccak256(maker, tokenSell, tokenBuy, amountTake, amountBuy, expires, nonce);
+        if (!orderBook[maker][hash]) {
+            /** this order did not show on blockchain yet. 
+              * if signature is right, put it on the chain. 
+              * check the dependency and balance first, we dont need to put the invalid order on chain
+              */  
+            require(verify(hash, maker, v, r, s));             // verify the signature
+            require(balances[tokenSell][maker] <= amountSell); // this is a new order, check maker's balance
+            orderBook[maker][hash] = true;
+            dependency[maker][nonce] = true;
+            // we should put every filled order on-chain.
+            // assert(remain[hash] == 0);
+            remain[hash] = amount;
+        }
+
+        // check if the order is filled
+        if (remain[hash] == 0) {
+            Fail(1, maker, tokenSell, tokenBuy, price, amount, expires, nonce);
+            return;
+        }
+
+        // check if the order is valid, if not, fill the order and return Failed event
+        if (balances[tokenSell][maker] <= remain[hash]) {
+            remain[hash] == 0;
+            Fail(2, maker, tokenSell, tokenBuy, price, amount, expires, nonce);
+            return;
+        }
+
+        if (!trade(maker, tokenSell, tokenBuy, price, takeAmount)) {
+        }
 
     }
 
@@ -93,9 +146,17 @@ contract Joyso is Ownable {
 
     }
 
-    function validate (bytes32 hash, address sender, uint8 v, bytes32 r, bytes32 s) public returns (bool) {
+    function verify (bytes32 hash, address sender, uint8 v, bytes32 r, bytes32 s) public returns (bool) {
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes32 prefixedHash = keccak256(prefix, hash);
         return ecrecover(prefixedHash, v, r, s) == sender;
+    }
+
+    // internal function
+    /** Trade function directly trade between two parties.
+      * Besure to check anything then enter this function.  
+      */
+    function trade (address maker, address tokenSell, address tokenBuy, uint256 price, uint256 takeAmount) private returns (bool) {
+        balances[tokenSell][maker].sub(takeAmount)
     }
 }
