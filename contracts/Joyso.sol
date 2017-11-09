@@ -46,7 +46,7 @@ contract Joyso is Ownable {
       * Besure to approve the contract to move your erc20 token if depositToken.  
       */
     function deposit (address token, uint256 amount) public payable {
-        require(token != 0 || msg.value != 0);
+        require(token != 0 || msg.value == amount);
         if (token != 0) {
             require(Token(token).transferFrom(msg.sender, this, amount));
         }
@@ -112,6 +112,13 @@ contract Joyso is Ownable {
     // helper functions
     function getBalance (address token, address account) public constant returns (uint256) {
         return balances[token][account];
+    }
+
+    function queryID (address maker, address tokenSell, address tokenBuy, uint256 amountSell, uint256 amountBuy, uint256 expires, uint256 nonce) 
+        public constant returns (bytes32 hash, uint256 balance) 
+    {
+        hash = keccak256(maker, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce);
+        balance = orderBook[hash].balance;
     }
 
     function verify (bytes32 hash, address sender, uint8 v, bytes32 r, bytes32 s) public returns (bool) {
