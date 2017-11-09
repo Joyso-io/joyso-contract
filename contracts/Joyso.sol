@@ -20,6 +20,11 @@ contract Joyso is Ownable {
         uint256 expires;
         uint256 nonce;
         uint256 balance;
+        /** status = 0: off-chain
+            status = 1: onchain and still avaliable
+            status = 2: onchain but finished
+         **/ 
+        uint256 status; 
     }
 
     mapping (address => mapping (address => uint256)) public balances;
@@ -32,7 +37,7 @@ contract Joyso is Ownable {
     event Withdraw(address token, address user, uint256 amount, uint256 balance);
     event Transfer (address token, address sender, uint256 amount, uint256 senderBalance, address reveiver, uint256 receriverBalance);
     event TradeScuessed (address maker, address tokenSell, address tokenBuy, uint256 amountSell, uint256 amountBuy);
-    event NewOrder(address maker, address tokenSell, address tokenBuy, uint256 amountSell, uint256 amountBuy, uint256 expires, uint256 nonce);
+    event NewOrder(bytes32 orderID, address maker, address tokenSell, address tokenBuy, uint256 amountSell, uint256 amountBuy, uint256 expires, uint256 nonce);
 
     /** Event for take fails
       * 1: the order is filled 
@@ -81,8 +86,8 @@ contract Joyso is Ownable {
         require(block.number <= expires);
         bytes32 hash = keccak256(msg.sender, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce);
         assert(orderBook[hash].orderID == 0); // This should be a new order.
-        orderBook[hash] = JoysoOrder(hash, msg.sender, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce, amountBuy);
-        NewOrder(msg.sender, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce);
+        orderBook[hash] = JoysoOrder(hash, msg.sender, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce, amountBuy, 1);
+        NewOrder(hash, msg.sender, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce);
     }
 
     function takeByID (bytes32 orderID, uint256 amountTake) public {
@@ -90,23 +95,50 @@ contract Joyso is Ownable {
         JoysoOrder memory thisOrder = orderBook[orderID];
         require(balances[thisOrder.tokenBuy][msg.sender] >= amountTake);
         require(thisOrder.expires >= block.number);
-        require(thisOrder.balance != 0);
+        require(thisOrder.status == 1);
 
         // update order balance
+        updateOrder (orderID);
+
+        // trade
+        amountTake = trade(orderID, amountTake);
+        TradeScuessed(thisOrder.owner, thisOrder.tokenSell, thisOrder.tokenBuy, thisOrder.amountSell, thisOrder.amountBuy);
+    }
+
+    function take (address maker, address tokenSell, address tokenBuy, uint256 amountSell, uint256 amountBuy, uint256 expires, uint256 nonce,
+        uint8 v, bytes32 r, bytes32 s, uint256 amountTake) public 
+    {
+        require(balances[tokenBuy][msg.sender] >= amountTake);
+        require(expires >= block.number);
+
+        bytes32 orderID;
+        uint256 orderStatus;
+        (orderID, orderStatus) = queryID(maker, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce);
+
+        if (orderStatus == 0) {
+            require (verify(orderID, maker, v, r, s));
+            orderBook[orderID] = JoysoOrder(orderID, maker, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce, amountBuy, 1);
+        }
+
+        // update order balance
+        updateOrder(orderID);
+        
+        // trade
+        amountTake = trade(orderID, amountTake);
+        TradeScuessed(maker, tokenSell, tokenBuy, amountSell, amountBuy);
+    }
+
+    function updateOrder (bytes32 orderID) {
+        JoysoOrder memory thisOrder = orderBook[orderID];
+        if (balances[thisOrder.tokenSell][thisOrder.owner] == 0) {
+            orderBook[orderID].status = 2;
+            return;
+        }
         if (balances[thisOrder.tokenSell][thisOrder.owner] <= thisOrder.amountSell) {
             if (balances[thisOrder.tokenSell][thisOrder.owner].mul(thisOrder.amountBuy).div(thisOrder.amountSell) <= thisOrder.balance) {
                 orderBook[orderID].balance = balances[thisOrder.tokenSell][thisOrder.owner].mul(thisOrder.amountBuy).div(thisOrder.amountSell);
             }
         }
-
-        uint256 amountToBuy = amountTake;
-        if (orderBook[orderID].balance > amountTake) {
-            amountToBuy = orderBook[orderID].balance;
-        }
-
-        // trade
-        trade(orderID, amountToBuy);
-        TradeScuessed (thisOrder.owner, thisOrder.tokenSell, thisOrder.tokenBuy, thisOrder.amountSell, thisOrder.amountBuy);
     }
 
     // helper functions
@@ -115,27 +147,35 @@ contract Joyso is Ownable {
     }
 
     function queryID (address maker, address tokenSell, address tokenBuy, uint256 amountSell, uint256 amountBuy, uint256 expires, uint256 nonce) 
-        public constant returns (bytes32 hash, uint256 balance) 
+        public constant returns (bytes32 hash, uint256 status) 
     {
         hash = keccak256(maker, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce);
-        balance = orderBook[hash].balance;
+        status = orderBook[hash].status;
     }
 
-    function verify (bytes32 hash, address sender, uint8 v, bytes32 r, bytes32 s) public returns (bool) {
+    function verify (bytes32 hash, address sender, uint8 v, bytes32 r, bytes32 s) public constant returns (bool) {
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes32 prefixedHash = keccak256(prefix, hash);
         return ecrecover(prefixedHash, v, r, s) == sender;
     }
 
     // internal function
-    /** Trade function directly trade between two parties.
+    /** This function directly trade between two parties.
       * Besure to check anything then enter this function.  
       */
-    function trade (bytes32 orderID, uint256 amountToBuy) 
-        private 
+    function trade (bytes32 orderID, uint256 amountTake) 
+        private returns (uint256)
     {
+        uint256 amountToBuy = amountTake;
+        if (orderBook[orderID].balance > amountTake) {
+            amountToBuy = orderBook[orderID].balance;
+        }
+
         // update balance first
         orderBook[orderID].balance.sub(amountToBuy);
+        if (orderBook[orderID].balance <= 0) {
+            orderBook[orderID].status = 2;
+        }
         JoysoOrder memory thisOrder = orderBook[orderID];
     
         // update maker/taker's balance
@@ -144,6 +184,7 @@ contract Joyso is Ownable {
         balances[thisOrder.tokenSell][msg.sender] = balances[thisOrder.tokenSell][msg.sender].add(amountToSell);
         balances[thisOrder.tokenBuy][msg.sender] = balances[thisOrder.tokenBuy][msg.sender].sub(amountToBuy);
         balances[thisOrder.tokenBuy][thisOrder.owner] = balances[thisOrder.tokenBuy][thisOrder.owner].add(amountToBuy);
-    }
 
+        return amountTake - amountToBuy;
+    }
 }
