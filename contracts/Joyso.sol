@@ -46,8 +46,8 @@ contract Joyso is Ownable {
       * Besure to approve the contract to move your erc20 token if depositToken.  
       */
     function deposit (address token, uint256 amount) public payable {
-        require(token != 0 || msg.value == amount);
-        if (token != 0) {
+        require((token != 0 && msg.value == 0) || msg.value == amount);
+        if (msg.value == 0) {
             require(Token(token).transferFrom(msg.sender, this, amount));
         }
         balances[token][msg.sender] = balances[token][msg.sender].add(amount);
