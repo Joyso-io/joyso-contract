@@ -10,10 +10,22 @@ import {StandardToken as Token} from "./lib/StandardToken.sol";
 contract Joyso is Ownable {
     using SafeMath for uint256;
 
+    struct order {
+        bytes32 hashID;
+        address owner;
+        address tokenSell;
+        address tokenBuy;
+        uint256 amountSell;
+        uint256 amountBuy;
+        uint256 expires;
+        uint256 nonce;
+        bool status;
+    }
+
     mapping (address => mapping (address => uint256)) public balances;
-    mapping (address => mapping (bytes32 => bool)) public orderBook;
     mapping (address => mapping (uint256 => bool)) public dependency;
-    mapping (bytes32 => uint256) public remain;
+    mapping (bytes32 => order) public orderBook;
+
 
     //events
     event Deposit (address token, address sender, uint256 amount, uint256 balance);
@@ -67,13 +79,9 @@ contract Joyso is Ownable {
         // simple check first, if these not pass, there is no need to watse more gas 
         require(balances[tokenSell][msg.sender] >= amountSell);
         require(block.number <= expires);
-        require(nonce == 0 || dependency[msg.sender][nonce] == false); // nonce = 0 to ignore dependency check 
         bytes32 hash = keccak256(msg.sender, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce);
-        assert(orderBook[msg.sender][hash] == false); // This should be a new order.
-        orderBook[msg.sender][hash] = true;
-        dependency[msg.sender][nonce] = true;
-        assert(remain[hash] == 0); // a new order should ramain nothing. 
-        remain[hash] = amountBuy;
+        assert(orderBook[hash].hashID == 0); // This should be a new order.
+        orderBook[hash] = (hash, msg.sender, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce, 1);
         NewOrder(msg.sender, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce);
     }
 
