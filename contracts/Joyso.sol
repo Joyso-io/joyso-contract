@@ -106,6 +106,7 @@ contract Joyso is Ownable {
 
         // trade
         trade(orderID, amountToBuy);
+        TradeScuessed (thisOrder.owner, thisOrder.tokenSell, thisOrder.tokenBuy, thisOrder.amountSell, thisOrder.amountBuy);
     }
 
     // helper functions
