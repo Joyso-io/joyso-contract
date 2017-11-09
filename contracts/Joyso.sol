@@ -128,7 +128,7 @@ contract Joyso is Ownable {
         TradeScuessed(maker, tokenSell, tokenBuy, amountSell, amountBuy);
     }
 
-    function updateOrder (bytes32 orderID) {
+    function updateOrder (bytes32 orderID) public {
         JoysoOrder memory thisOrder = orderBook[orderID];
         if (balances[thisOrder.tokenSell][thisOrder.owner] == 0) {
             orderBook[orderID].status = 2;
@@ -142,18 +142,18 @@ contract Joyso is Ownable {
     }
 
     // helper functions
-    function getBalance (address token, address account) public constant returns (uint256) {
+    function getBalance (address token, address account) public view returns (uint256) {
         return balances[token][account];
     }
 
     function queryID (address maker, address tokenSell, address tokenBuy, uint256 amountSell, uint256 amountBuy, uint256 expires, uint256 nonce) 
-        public constant returns (bytes32 hash, uint256 status) 
+        public view returns (bytes32 hash, uint256 status) 
     {
         hash = keccak256(maker, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce);
         status = orderBook[hash].status;
     }
 
-    function verify (bytes32 hash, address sender, uint8 v, bytes32 r, bytes32 s) public constant returns (bool) {
+    function verify (bytes32 hash, address sender, uint8 v, bytes32 r, bytes32 s) public pure returns (bool) {
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes32 prefixedHash = keccak256(prefix, hash);
         return ecrecover(prefixedHash, v, r, s) == sender;
