@@ -1,10 +1,14 @@
 
-var Joyso = artifacts.require("./Joyso.sol");
+'use strict'
 
-contract('Joyso', function(accounts) {
-  it("should assert true", function(done) {
-    var joyso = Joyso.deployed();
-    assert.isTrue(true);
-    done();
-  });
-});
+const Joyso = artifacts.require("./Joyso.sol");
+const TestToken = artifacts.require("./TestToken.sol")
+
+contract('Joyso', function (accounts) {
+
+    it("should have equal balance when deposit ether", function(done) {
+        return Joyso.deployed().then(function(instance){
+            console.log(instance)
+        })
+    })
+})
