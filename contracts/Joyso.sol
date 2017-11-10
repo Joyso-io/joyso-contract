@@ -33,7 +33,7 @@ contract Joyso is Ownable {
 
 
     //events
-    event Deposit (address token, address sender, uint256 amount, uint256 balance);
+    event Deposit (address token, address user, uint256 amount, uint256 balance);
     event Withdraw(address token, address user, uint256 amount, uint256 balance);
     event Transfer (address token, address sender, uint256 amount, uint256 senderBalance, address reveiver, uint256 receriverBalance);
     event TradeScuessed (address maker, address tokenSell, address tokenBuy, uint256 amountSell, uint256 amountBuy);
@@ -50,16 +50,18 @@ contract Joyso is Ownable {
       * It is more convenient to transfer funds or to trade in contract.
       * Besure to approve the contract to move your erc20 token if depositToken.  
       */
-    function deposit (address token, uint256 amount) public payable {
-        require((token != 0 && msg.value == 0) || msg.value == amount);
-        if (msg.value == 0) {
-            require(Token(token).transferFrom(msg.sender, this, amount));
-        }
+    function depositToken (address token, uint256 amount) public {
+        require(Token(token).transferFrom(msg.sender, this, amount));
         balances[token][msg.sender] = balances[token][msg.sender].add(amount);
         Deposit(token, msg.sender, amount, balances[token][msg.sender]);
     }
 
-    function withdraw (address token, uint256 amount) public {
+    function depositEther () public payable {
+        balances[0][msg.sender] = balances[0][msg.sender].add(msg.value);
+        Deposit(0, msg.sender, msg.value, balances[0][msg.sender]);
+    }
+
+    function withdrawToken (address token, uint256 amount) public {
         require (balances[token][msg.sender] >= amount);
         balances[token][msg.sender] = balances[token][msg.sender].sub(amount);
         if (token == 0) {
@@ -68,6 +70,13 @@ contract Joyso is Ownable {
             require (Token(token).transfer(msg.sender, amount));
         }
         Withdraw(token, msg.sender, amount, balances[token][msg.sender]);
+    }
+
+    function withdrawEther (uint256 amount) public {
+        require (balances[0][msg.sender] >= amount);
+        balances[0][msg.sender] = balances[0][msg.sender].sub(amount);
+        require (msg.sender.call.value(amount)());
+        Withdraw(0, msg.sender, amount, balances[0][msg.sender]);       
     }
 
     /** Transfer funds in contract.
