@@ -118,15 +118,16 @@ contract Joyso is Ownable {
         if (orderStatus == 2) {
             Fail(1, maker, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce);
             return;
-        }
-
-        if (orderStatus == 0) {
+        }else if (orderStatus == 1) {
+            updateOrder(orderID);
+            if (orderStatus == 2) {
+                Fail(2, maker, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce);
+                return;
+            }
+        }else { // orderStatus == 0
             require (verify(orderID, maker, v, r, s));
             orderBook[orderID] = JoysoOrder(orderID, maker, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce, amountBuy, 1);
         }
-
-        // update order balance
-        updateOrder(orderID);
         
         // trade
         amountTake = trade(orderID, amountTake);
@@ -232,11 +233,14 @@ contract Joyso is Ownable {
         uint256 orderStatus;
         (orderID, orderStatus) = queryID(maker, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce);
         if (orderStatus == 2) return;
-        if (orderStatus == 0) {
+        else if (orderStatus == 1) {
+            updateOrder(orderID);
+            if(orderStatus == 2) return;
+        }
+        else { // orderStatus == 0
             if (!verify(orderID, maker, v, r, s)) return;
             orderBook[orderID] = JoysoOrder(orderID, maker, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce, amountBuy, 1);
         }
-        updateOrder(orderID);
         reamin = trade(orderID, amountTake);
     }
 }
