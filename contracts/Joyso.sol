@@ -1,4 +1,4 @@
-pragma solidity ^0.4.15;
+pragma solidity ^0.4.17;
 
 import "./lib/SafeMath.sol";
 import "./lib/Ownable.sol";
@@ -41,8 +41,7 @@ contract Joyso is Ownable {
     event Cancel(bytes32 orderID);
 
     /** Event for take fails
-      * 1: the order is filled 
-      * 2: maker's balance is not enough
+      * 1: the order is filled or canceled 
       * 3: scuess the trade but fail in turn to order
       */
     event Fail(uint8 index, address maker, address tokenSell, address tokenBuy, uint256 amountSell, uint256 amountBuy, uint256 expires, uint256 nonce);
@@ -116,6 +115,11 @@ contract Joyso is Ownable {
         uint256 orderStatus;
         (orderID, orderStatus) = queryID(maker, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce);
 
+        if (orderStatus == 2) {
+            Fail(1, maker, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce);
+            return;
+        }
+
         if (orderStatus == 0) {
             require (verify(orderID, maker, v, r, s));
             orderBook[orderID] = JoysoOrder(orderID, maker, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce, amountBuy, 1);
@@ -127,6 +131,28 @@ contract Joyso is Ownable {
         // trade
         amountTake = trade(orderID, amountTake);
         TradeScuessed(maker, tokenSell, tokenBuy, amountSell, amountBuy);
+    }
+
+    function multiTake (address[] maker, address tokenSell, address tokenBuy, uint256[] amountSell, uint256[] amountBuy, uint256[] expires, uint256[] nonce,
+        uint8[] v, bytes32[] r, bytes32[] s, uint256 amountTake) public 
+    {
+        require(balances[tokenBuy][msg.sender] >= amountTake);
+
+        // check length 
+        uint256 length = maker.length;
+        require(amountSell.length == length && 
+            amountBuy.length == length && 
+            expires.length == length && 
+            nonce.length == length &&
+            v.length == length &&
+            r.length == length && 
+            s.length == length);
+
+        for (uint256 i = 0; i < length; i++){
+            if (amountTake <= 0) break;
+            amountTake = internalTrade(maker[i], tokenSell, tokenBuy, amountSell[i], amountBuy[i], expires[i], nonce[i],
+                                    v[i], r[i], s[i], amountTake);
+        }
     }
 
     function cancel (address tokenSell, address tokenBuy, uint256 amountSell, uint256 amountBuy, uint256 expires, uint256 nonce) public {
@@ -195,5 +221,22 @@ contract Joyso is Ownable {
         balances[thisOrder.tokenBuy][thisOrder.owner] = balances[thisOrder.tokenBuy][thisOrder.owner].add(amountToBuy);
 
         return amountTake - amountToBuy;
+    }
+
+    function internalTrade (address maker, address tokenSell, address tokenBuy, uint256 amountSell, uint256 amountBuy, uint256 expires, uint256 nonce,
+        uint8 v, bytes32 r, bytes32 s, uint256 amountTake)
+        private returns (uint256 reamin)
+    {
+        if (expires >= block.number) return;
+        bytes32 orderID;
+        uint256 orderStatus;
+        (orderID, orderStatus) = queryID(maker, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce);
+        if (orderStatus == 2) return;
+        if (orderStatus == 0) {
+            if (!verify(orderID, maker, v, r, s)) return;
+            orderBook[orderID] = JoysoOrder(orderID, maker, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce, amountBuy, 1);
+        }
+        updateOrder(orderID);
+        reamin = trade(orderID, amountTake);
     }
 }
