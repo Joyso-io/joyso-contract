@@ -38,6 +38,7 @@ contract Joyso is Ownable {
     event Transfer (address token, address sender, uint256 amount, uint256 senderBalance, address reveiver, uint256 receriverBalance);
     event TradeScuessed (address maker, address tokenSell, address tokenBuy, uint256 amountSell, uint256 amountBuy);
     event NewOrder(bytes32 orderID, address maker, address tokenSell, address tokenBuy, uint256 amountSell, uint256 amountBuy, uint256 expires, uint256 nonce);
+    event Cancel(bytes32 orderID);
 
     /** Event for take fails
       * 1: the order is filled 
@@ -98,7 +99,7 @@ contract Joyso is Ownable {
         require(thisOrder.status == 1);
 
         // update order balance
-        updateOrder (orderID);
+        updateOrder(orderID);
 
         // trade
         amountTake = trade(orderID, amountTake);
@@ -126,6 +127,14 @@ contract Joyso is Ownable {
         // trade
         amountTake = trade(orderID, amountTake);
         TradeScuessed(maker, tokenSell, tokenBuy, amountSell, amountBuy);
+    }
+
+    function cancel (address tokenSell, address tokenBuy, uint256 amountSell, uint256 amountBuy, uint256 expires, uint256 nonce) public {
+        bytes32 orderID;
+        uint256 orderStatus;
+        (orderID, orderStatus) = queryID(msg.sender, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce);
+        orderBook[orderID] = JoysoOrder(orderID, msg.sender, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce, 0, 2);
+        Cancel(orderID);
     }
 
     function updateOrder (bytes32 orderID) public {
