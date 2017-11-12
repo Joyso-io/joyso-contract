@@ -212,7 +212,7 @@ contract Joyso is Ownable {
         private returns (uint256)
     {
         uint256 amountToBuy = amountTake;
-        if (orderBook[orderID].balance > amountTake) {
+        if (orderBook[orderID].balance < amountTake) {
             amountToBuy = orderBook[orderID].balance;
         }
 
