@@ -65,9 +65,14 @@ contract('Joyso', function (accounts) {
         var user2_token_balance = await joyso.getBalance.call(testToken.address, user2)
         assert.equal(ONE, user1_ether_balance)
         assert.equal(ONE, user2_token_balance)
+        var query = await joyso.orderBook.call(orderID)        
+        var orderBalance = query[8]
+        var orderStatus = query[9]
+        assert.equal(0, orderBalance)
+        assert.equal(2, orderStatus) 
     })
 
-    it("should update if the order maker has not enough balance", async function () {
+    it("should update the order balance if the order maker has not enough balance", async function () {
         var joyso = await Joyso.new({from: admin})
         var testToken = await TestToken.new('tt', 'tt', 18, {from: admin})
         await testToken.transfer(user1, ONE, {from: admin})
@@ -86,9 +91,13 @@ contract('Joyso', function (accounts) {
         var query = await joyso.orderBook.call(orderID)
         var orderBalance = query[8]
         assert.equal(ONE/2, orderBalance)
+        var query = await joyso.orderBook.call(orderID)        
+        var orderBalance = query[8]
+        var orderStatus = query[9]
+        assert.equal(ONE/2, orderBalance)
     })
 
-    it("should update the order if user balance is not enough.", async function () {
+    it("should auto update the order if user balance is not enough when take in progress.", async function () {
         var joyso = await Joyso.new({from: admin})
         var testToken = await TestToken.new('tt', 'tt', 18, {from: admin})
         await testToken.transfer(user1, ONE, {from: admin})
@@ -105,6 +114,36 @@ contract('Joyso', function (accounts) {
         var user1_ether_balance = await joyso.getBalance.call(ETHER, user1)
         var user2_token_balance = await joyso.getBalance.call(testToken.address, user2)
         assert.equal(ONE/2, user1_ether_balance)
-        assert.equal(ONE/2, user2_token_balance)        
+        assert.equal(ONE/2, user2_token_balance)
+        var query = await joyso.orderBook.call(orderID)        
+        var orderBalance = query[8]
+        var orderStatus = query[9]
+        assert.equal(0, orderBalance)
+        assert.equal(2, orderStatus)       
+    })
+
+    it("amoutTake多的時候可以把餘額全交易掉", async function () {
+        var joyso = await Joyso.new({from: admin})
+        var testToken = await TestToken.new('tt', 'tt', 18, {from: admin})
+        await testToken.transfer(user1, ONE, {from: admin})
+        await testToken.approve(joyso.address, ONE, {from: user1})
+        await joyso.depositToken(testToken.address, ONE, {from: user1})
+        await joyso.depositEther({from: user2, value: ONE})
+        await joyso.make(testToken.address, ETHER, ONE/2, ONE/2, 10000, 1, {from: user1})
+        var query = await joyso.queryID.call(user1, testToken.address, ETHER, ONE/2, ONE/2, 10000, 1)
+        var orderID = query[0]
+        var orderStatus = query[1]
+        assert.equal(1, orderStatus)
+        await joyso.takeByID(orderID, ONE, {from: user2})
+        var user1_ether_balance = await joyso.getBalance.call(ETHER, user1)
+        var user2_token_balance = await joyso.getBalance.call(testToken.address, user2)
+        assert.equal(ONE/2, user1_ether_balance)
+        assert.equal(ONE/2, user2_token_balance)
+        var query = await joyso.orderBook.call(orderID)
+        console.log(query)
+        var orderBalance = query[8]
+        var orderStatus = query[9]
+        assert.equal(0, orderBalance)
+        assert.equal(2, orderStatus)     
     })
 })

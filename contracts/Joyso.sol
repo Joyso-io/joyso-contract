@@ -217,7 +217,7 @@ contract Joyso is Ownable {
         }
 
         // update balance first
-        orderBook[orderID].balance.sub(amountToBuy);
+        orderBook[orderID].balance = orderBook[orderID].balance.sub(amountToBuy);
         if (orderBook[orderID].balance <= 0) {
             orderBook[orderID].status = 2;
         }
