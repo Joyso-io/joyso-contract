@@ -1,0 +1,27 @@
+{
+  "name": "joyso-contracts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "truffle.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ConsensusInnovation/joyso-contracts.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ConsensusInnovation/joyso-contracts/issues"
+  },
+  "homepage": "https://github.com/ConsensusInnovation/joyso-contracts#readme",
+  "devDependencies": {
+    "ethereumjs-abi": "^0.6.4",
+    "ethereumjs-util": "^5.1.2",
+    "lodash": "^4.17.4"
+  }
+}

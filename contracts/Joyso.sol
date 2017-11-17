@@ -136,6 +136,7 @@ contract Joyso is Ownable {
         }else { // orderStatus == 0
             require (verify(orderID, maker, v, r, s));
             orderBook[orderID] = JoysoOrder(orderID, maker, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce, amountBuy, 1);
+            updateOrder(orderID);
         }
         
         // trade
@@ -199,9 +200,10 @@ contract Joyso is Ownable {
     }
 
     function verify (bytes32 hash, address sender, uint8 v, bytes32 r, bytes32 s) public pure returns (bool) {
-        bytes memory prefix = "\x19Ethereum Signed Message:\n32";
-        bytes32 prefixedHash = keccak256(prefix, hash);
-        return ecrecover(prefixedHash, v, r, s) == sender;
+        // bytes memory prefix = "\x19Ethereum Signed Message:\n32";
+        // bytes32 prefixedHash = keccak256(prefix, hash);
+        // return ecrecover(prefixedHash, v, r, s) == sender;
+        return ecrecover(hash, v, r, s) == sender;
     }
 
     // internal function
