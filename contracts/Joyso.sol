@@ -9,35 +9,28 @@ import {StandardToken as Token} from "./lib/StandardToken.sol";
   */
 contract Joyso is Ownable {
     using SafeMath for uint256;
-
-    struct JoysoOrder {
-        bytes32 orderID;
-        address owner;
-        address tokenSell;
-        address tokenBuy;
-        uint256 amountSell;
-        uint256 amountBuy;
-        uint256 expires;
-        uint256 nonce;
-        uint256 balance;
-        /** status = 0: off-chain
-            status = 1: onchain and still avaliable
-            status = 2: onchain but finished
-         **/ 
-        uint256 status; 
-    }
+    uint256 constant TIME_LOCK_PERIOD = 100000;
 
     mapping (address => mapping (address => uint256)) public balances;
-    mapping (address => mapping (uint256 => bool)) public dependency;
+    mapping (bytes32 => uint256) public orderBalance;
+    mapping (address => uint256) public timeLock;
+    mapping (address => bool) public isAdmin;
+    mapping (bytes32 => bool) public fee_paid;
     mapping (bytes32 => JoysoOrder) public orderBook;
+    mapping (bytes32 => bool) public withdrawn;
 
+    uint256 public withdrawFee;
+
+    modifier onlyAdmin {
+        require(msg.sender == owner || isAdmin[msg.sender]);
+        _;
+    }
 
     //events
     event Deposit (address token, address user, uint256 amount, uint256 balance);
     event Withdraw(address token, address user, uint256 amount, uint256 balance);
     event Transfer (address token, address sender, uint256 amount, uint256 senderBalance, address reveiver, uint256 receriverBalance);
     event TradeScuessed (address maker, address tokenSell, address tokenBuy, uint256 amountSell, uint256 amountBuy);
-    event NewOrder(bytes32 orderID, address maker, address tokenSell, address tokenBuy, uint256 amountSell, uint256 amountBuy, uint256 expires, uint256 nonce);
     event Cancel(bytes32 orderID);
 
     /** Event for take fails
@@ -46,6 +39,10 @@ contract Joyso is Ownable {
       */
     event Fail(uint8 index, address maker, address tokenSell, address tokenBuy, uint256 amountSell, uint256 amountBuy, uint256 expires, uint256 nonce);
  
+    function Joyso (uint256 _withdrawFee) {
+        withdrawFee = _withdrawFee;
+    }
+
     /** Deposit allow user to store the funds in Joyso contract.
       * It is more convenient to transfer funds or to trade in contract.
       * Besure to approve the contract to move your erc20 token if depositToken.  
@@ -53,138 +50,86 @@ contract Joyso is Ownable {
     function depositToken (address token, uint256 amount) public {
         require(Token(token).transferFrom(msg.sender, this, amount));
         balances[token][msg.sender] = balances[token][msg.sender].add(amount);
+        timeLock[msg.sender] = block.number + TIME_LOCK_PERIOD;
         Deposit(token, msg.sender, amount, balances[token][msg.sender]);
     }
 
     function depositEther () public payable {
         balances[0][msg.sender] = balances[0][msg.sender].add(msg.value);
+        timeLock[msg.sender] = block.number + TIME_LOCK_PERIOD;
         Deposit(0, msg.sender, msg.value, balances[0][msg.sender]);
     }
 
-    function withdrawToken (address token, uint256 amount) public {
-        require (balances[token][msg.sender] >= amount);
-        balances[token][msg.sender] = balances[token][msg.sender].sub(amount);
+    function withdrawUser (address token, uint256 amount) public {
+        require(block.number > timeLock[msg.sender]);
+        require(balances[token][msg.sender] >= amount);
+        balances[token][msg.sender].sub(amount);
+        if(token == 0) {
+            msg.sender.transfer(amount);
+        } else {
+            require(Token(token).transfer(msg.sender, amount));
+        }
+        Withdraw(token, msg.sender, amount, balances[token][msg.sender]);       
+    }
+
+    // user send the transaction, user pay the fee, need the admin's signatue to insure the tx schedule
+    function withdrawAdmin (address token, uint256 amount, address admin, uint8 v, bytes32 r, bytes32 s, uint256 nonce) public {
+        bytes32 hash = sha3(msg.sender, token, amount, nonce);
+        require (verify(hash, admin, v, r, s));
+        require (!withdrawn[hash]);
+        withdrawn[hash] = ture;
+        require (balances[token][user] >= amount);
+        balances[token][msg.sender].sub(amount);
         if (token == 0) {
-            require (msg.sender.call.value(amount)());
+            msg.sender.transfer(amount);
         } else {
             require (Token(token).transfer(msg.sender, amount));
         }
-        Withdraw(token, msg.sender, amount, balances[token][msg.sender]);
+        Withdraw(token, msg.sender, amount, balances[token][msg.sender]);       
     }
 
-    function withdrawEther (uint256 amount) public {
-        require (balances[0][msg.sender] >= amount);
-        balances[0][msg.sender] = balances[0][msg.sender].sub(amount);
-        require (msg.sender.call.value(amount)());
-        Withdraw(0, msg.sender, amount, balances[0][msg.sender]);       
+    // admin send the transaction, collect fees from user
+    function adminWithdraw (address token, uint256 amount, address user, uint8 v, bytes32 r, bytes32 s, uint256 nonce, uint256 withdrawFee) onlyAdmin public {
+        require (withdrawFee < 50 finney);
+        bytes32 hash = sha3(user, token, amount, nonce);
+        require (!withdrawn[hash]);
+        require (verify(hash, user, v, r, s));
+        require (balances[token][user] >= amount + withdrawFee[token]);
+        balances[token][user].sub(amount);
+        balances[token][fee_collector].add(withdrawFee);
+        withdrawn[hash] = true;
+        if (token == 0) {
+            msg.sender.transfer(amount);
+        } else {
+            require( Token(token).transfer(msg.sender, amount));
+        }
+        Withdraw(token, user, amount, balances[token][user]);       
     }
 
-    /** Transfer funds in contract.
-      * Using token = 0x to transfer ether.
-      */
-    function transfer (address token, address receiver, uint256 amount) public {
-        require (balances[token][msg.sender] >= amount);
-        balances[token][msg.sender] = balances[token][msg.sender].sub(amount);
-        balances[token][receiver] = balances[token][receiver].add(amount);
-        Transfer(token, msg.sender, amount, balances[token][msg.sender], receiver, balances[token][receiver]);
-    }
-
-    function make (address tokenSell, address tokenBuy, uint256 amountSell, uint256 amountBuy, uint256 expires, uint256 nonce) public {
-        // simple check first, if these not pass, there is no need to watse more gas 
-        require(balances[tokenSell][msg.sender] >= amountSell);
-        require(block.number <= expires);
-        bytes32 hash = keccak256(msg.sender, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce);
-        assert(orderBook[hash].orderID == 0); // This should be a new order.
-        orderBook[hash] = JoysoOrder(hash, msg.sender, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce, amountBuy, 1);
-        NewOrder(hash, msg.sender, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce);
-    }
-
-    function takeByID (bytes32 orderID, uint256 amountTake) public {
-
-        JoysoOrder memory thisOrder = orderBook[orderID];
-        require(balances[thisOrder.tokenBuy][msg.sender] >= amountTake);
-        require(thisOrder.expires >= block.number);
-        require(thisOrder.status == 1);
-
-        // update order balance
-        updateOrder(orderID);
-
-        // trade
-        amountTake = trade(orderID, amountTake);
-        TradeScuessed(thisOrder.owner, thisOrder.tokenSell, thisOrder.tokenBuy, thisOrder.amountSell, thisOrder.amountBuy);
-    }
-
-    function take (address maker, address tokenSell, address tokenBuy, uint256 amountSell, uint256 amountBuy, uint256 expires, uint256 nonce,
-        uint8 v, bytes32 r, bytes32 s, uint256 amountTake) public 
+    function match (address[] maker, address token1, address token2, uint256[] amountSell, uint256[] amountBuy, uint256[] nonce,
+        uint8[] v, bytes32[] r, bytes32[] s) onlyAdmin public 
+        // TODO: be sure the maker's ratio is better for taker 
+        /**
+          * array[0]: taker, sell token2, buy token1
+          * array[1]: maker1, sell token1, buy token2
+          * array[2]: maker2, sell token1, buy token2
+          */
     {
-        require(balances[tokenBuy][msg.sender] >= amountTake);
-        require(expires >= block.number);
+        bytes32 hash = queryID(maker[0], token2, token1, amountSell[0], amountBuy[0], nonce[0]);
+        require (verify(hash, maker[0], v[0], r[0], s[0]));
+        uint256 tosb = amoutSell[0]; // taker order sell balance
+        uint256 tobb = 0; // taker order buy balance
 
-        bytes32 orderID;
-        uint256 orderStatus;
-        (orderID, orderStatus) = queryID(maker, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce);
-
-        if (orderStatus == 2) {
-            Fail(1, maker, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce);
-            return;
-        }else if (orderStatus == 1) {
-            updateOrder(orderID);
-            if (orderStatus == 2) {
-                Fail(2, maker, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce);
-                return;
-            }
-        }else { // orderStatus == 0
-            require (verify(orderID, maker, v, r, s));
-            orderBook[orderID] = JoysoOrder(orderID, maker, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce, amountBuy, 1);
-            updateOrder(orderID);
+        for (uint256 i = 0; i < maker.length - 1; i++) {
+            if (tosb <= 0) 
+                break;
+            bytes32 makeHash = queryID(maker[i], token1, token2, amountSell[i], amountBuy[i], nonce[i]);
+            if (!verify(makeHash, maker[i], v[i], r[i], s[i])) 
+                continue; // Should we need the event if verify fail???
+            (tosb, tobb) = internalTrade(maker[i], token1, token2, amountSell[i], amountBuy[i], makeHash, tosb, tobb);
         }
-        
-        // trade
-        amountTake = trade(orderID, amountTake);
-        TradeScuessed(maker, tokenSell, tokenBuy, amountSell, amountBuy);
-    }
 
-    function multiTake (address[] maker, address tokenSell, address tokenBuy, uint256[] amountSell, uint256[] amountBuy, uint256[] expires, uint256[] nonce,
-        uint8[] v, bytes32[] r, bytes32[] s, uint256 amountTake) public 
-    {
-        require(balances[tokenBuy][msg.sender] >= amountTake);
-
-        // check length 
-        uint256 length = maker.length;
-        require(amountSell.length == length && 
-            amountBuy.length == length && 
-            expires.length == length && 
-            nonce.length == length &&
-            v.length == length &&
-            r.length == length && 
-            s.length == length);
-
-        for (uint256 i = 0; i < length; i++){
-            if (amountTake <= 0) break;
-            amountTake = internalTrade(maker[i], tokenSell, tokenBuy, amountSell[i], amountBuy[i], expires[i], nonce[i],
-                                    v[i], r[i], s[i], amountTake);
-        }
-    }
-
-    function cancel (address tokenSell, address tokenBuy, uint256 amountSell, uint256 amountBuy, uint256 expires, uint256 nonce) public {
-        bytes32 orderID;
-        uint256 orderStatus;
-        (orderID, orderStatus) = queryID(msg.sender, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce);
-        orderBook[orderID] = JoysoOrder(orderID, msg.sender, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce, 0, 2);
-        Cancel(orderID);
-    }
-
-    function updateOrder (bytes32 orderID) public {
-        JoysoOrder memory thisOrder = orderBook[orderID];
-        if (balances[thisOrder.tokenSell][thisOrder.owner] == 0) {
-            orderBook[orderID].status = 2;
-            return;
-        }
-        if (balances[thisOrder.tokenSell][thisOrder.owner] <= thisOrder.amountSell) {
-            if (balances[thisOrder.tokenSell][thisOrder.owner].mul(thisOrder.amountBuy).div(thisOrder.amountSell) <= thisOrder.balance) {
-                orderBook[orderID].balance = balances[thisOrder.tokenSell][thisOrder.owner].mul(thisOrder.amountBuy).div(thisOrder.amountSell);
-            }
-        }
+        // update the taker's balance
     }
 
     // helper functions
@@ -192,11 +137,10 @@ contract Joyso is Ownable {
         return balances[token][account];
     }
 
-    function queryID (address maker, address tokenSell, address tokenBuy, uint256 amountSell, uint256 amountBuy, uint256 expires, uint256 nonce) 
-        public view returns (bytes32 hash, uint256 status) 
+    function queryID (address maker, address tokenSell, address tokenBuy, uint256 amountSell, uint256 amountBuy, uint256 nonce) 
+        public view returns (bytes32 hash) 
     {
-        hash = keccak256(maker, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce);
-        status = orderBook[hash].status;
+        hash = keccak256(maker, tokenSell, tokenBuy, amountSell, amountBuy, nonce);
     }
 
     function verify (bytes32 hash, address sender, uint8 v, bytes32 r, bytes32 s) public pure returns (bool) {
@@ -206,52 +150,25 @@ contract Joyso is Ownable {
         return ecrecover(hash, v, r, s) == sender;
     }
 
-    // internal function
-    /** This function directly trade between two parties.
-      * Besure to check anything then enter this function.  
-      */
-    function trade (bytes32 orderID, uint256 amountTake) 
-        private returns (uint256)
+    function internalTrade (address maker, address tokenSell, address tokenBuy, uint256 amountSell, uint256 amountBuy, bytes32 makerHash, 
+        uint256 tosb, uint256 tobb)
+        private returns (uint256 tosb, uint256 tobb)
     {
-        uint256 amountToBuy = amountTake;
-        if (orderBook[orderID].balance < amountTake) {
-            amountToBuy = orderBook[orderID].balance;
-        }
+        uint256 orderBuyBalance = amountBuy.sub(orderBalance[makerHash]);
+        uint256 orderSellBalance = orderBuyBalance.mul(amountSell).div(amountBuy);
+        if (tosb >= orderBuyBalance) { 
+            tosb = tosb.sub(orderBuyBalance);
+            tobb = tobb.add(orderSellBalance);
 
-        // update balance first
-        orderBook[orderID].balance = orderBook[orderID].balance.sub(amountToBuy);
-        if (orderBook[orderID].balance <= 0) {
-            orderBook[orderID].status = 2;
-        }
-        JoysoOrder memory thisOrder = orderBook[orderID];
-    
-        // update maker/taker's balance
-        uint256 amountToSell = amountToBuy.mul(thisOrder.amountSell).div(thisOrder.amountBuy);
-        balances[thisOrder.tokenSell][thisOrder.owner] = balances[thisOrder.tokenSell][thisOrder.owner].sub(amountToSell);
-        balances[thisOrder.tokenSell][msg.sender] = balances[thisOrder.tokenSell][msg.sender].add(amountToSell);
-        balances[thisOrder.tokenBuy][msg.sender] = balances[thisOrder.tokenBuy][msg.sender].sub(amountToBuy);
-        balances[thisOrder.tokenBuy][thisOrder.owner] = balances[thisOrder.tokenBuy][thisOrder.owner].add(amountToBuy);
+            // fill the orderBalance 
+            orderBalance[makerHash] = amountBuy;
 
-        return amountTake - amountToBuy;
-    }
-
-    function internalTrade (address maker, address tokenSell, address tokenBuy, uint256 amountSell, uint256 amountBuy, uint256 expires, uint256 nonce,
-        uint8 v, bytes32 r, bytes32 s, uint256 amountTake)
-        private returns (uint256 reamin)
-    {
-        if (expires >= block.number) return;
-        bytes32 orderID;
-        uint256 orderStatus;
-        (orderID, orderStatus) = queryID(maker, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce);
-        if (orderStatus == 2) return;
-        else if (orderStatus == 1) {
-            updateOrder(orderID);
-            if(orderStatus == 2) return;
+            // update the maker balance 
+            balances[tokenSell][maker] = balances[tokenSell].sub(orderSellBalance);
+            balances[tokenBuy][maker] = balances[tokenBuy].add(orderBuyBalance);
+        } else { // tosb < orderBuyBalance
+            uint256 actualBuyAmount = tosb.mul(amountSell).div(amountBuy);
+            uint256 actualSellAmount =  actualBuyAmount.mul().div();
         }
-        else { // orderStatus == 0
-            if (!verify(orderID, maker, v, r, s)) return;
-            orderBook[orderID] = JoysoOrder(orderID, maker, tokenSell, tokenBuy, amountSell, amountBuy, expires, nonce, amountBuy, 1);
-        }
-        reamin = trade(orderID, amountTake);
     }
 }
