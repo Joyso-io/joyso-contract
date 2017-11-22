@@ -73,8 +73,9 @@ contract Joyso is Ownable {
     }
 
     // user send the transaction, user pay the fee, need the admin's signatue to insure the tx schedule
-    function withdrawAdmin (address token, uint256 amount, address admin, uint8 v, bytes32 r, bytes32 s, uint256 nonce) public {
-        bytes32 hash = sha3(msg.sender, token, amount, nonce);
+    function withdrawAdmin (address token, uint256 amount, address admin, uint8 v, bytes32 r, bytes32 s, uint256 timestamp) public {
+        bytes32 hash = sha3(msg.sender, token, amount, timestamp);
+        require (block.timestamp < timestamp + 10 minutes);
         require (verify(hash, admin, v, r, s));
         require (!withdrawn[hash]);
         withdrawn[hash] = ture;
@@ -89,9 +90,9 @@ contract Joyso is Ownable {
     }
 
     // admin send the transaction, collect fees from user
-    function adminWithdraw (address token, uint256 amount, address user, uint8 v, bytes32 r, bytes32 s, uint256 nonce, uint256 withdrawFee) onlyAdmin public {
+    function adminWithdraw (address token, uint256 amount, address user, uint8 v, bytes32 r, bytes32 s, uint256 timestamp, uint256 withdrawFee) onlyAdmin public {
         require (withdrawFee < 50 finney);
-        bytes32 hash = sha3(user, token, amount, nonce);
+        bytes32 hash = sha3(user, token, amount, timestamp);
         require (!withdrawn[hash]);
         require (verify(hash, user, v, r, s));
         require (balances[token][user] >= amount + withdrawFee[token]);
@@ -106,7 +107,7 @@ contract Joyso is Ownable {
         Withdraw(token, user, amount, balances[token][user]);       
     }
 
-    function match (address[] maker, address token1, address token2, uint256[] amountSell, uint256[] amountBuy, uint256[] nonce,
+    function matchOrder (address[] maker, address token1, address token2, uint256[] amountSell, uint256[] amountBuy, uint256[] timestamp,
         uint8[] v, bytes32[] r, bytes32[] s) onlyAdmin public 
         // TODO: be sure the maker's ratio is better for taker 
         /**
@@ -115,21 +116,31 @@ contract Joyso is Ownable {
           * array[2]: maker2, sell token1, buy token2
           */
     {
-        bytes32 hash = queryID(maker[0], token2, token1, amountSell[0], amountBuy[0], nonce[0]);
+        bytes32 hash = queryID(maker[0], token2, token1, amountSell[0], amountBuy[0], timestamp[0]);
         require (verify(hash, maker[0], v[0], r[0], s[0]));
+        // every take order must first time on chain
+        require(orderBalance[hash] == 0);
         uint256 tosb = amoutSell[0]; // taker order sell balance
         uint256 tobb = 0; // taker order buy balance
 
         for (uint256 i = 0; i < maker.length - 1; i++) {
+            // TODO: we should guerentee the maker's price is better than taker's price
+            // TODO: should we guerentee the maker's price is better than the next maker's price?
             if (tosb <= 0) 
                 break;
-            bytes32 makeHash = queryID(maker[i], token1, token2, amountSell[i], amountBuy[i], nonce[i]);
+            bytes32 makeHash = queryID(maker[i], token1, token2, amountSell[i], amountBuy[i], timestamp[i]);
             if (!verify(makeHash, maker[i], v[i], r[i], s[i])) 
                 continue; // Should we need the event if verify fail???
             (tosb, tobb) = internalTrade(maker[i], token1, token2, amountSell[i], amountBuy[i], makeHash, tosb, tobb);
         }
 
+        // update take order 
+        // every take order must first time on chain
+        orderBalance[hash] = tobb;
+
         // update the taker's balance
+        balances[token2][maker[0]] = balances[token2][maker[0]].sub(amountSell[0].sub(tosb));
+        balances[token1][maker[0]] = balances[token1][maker[0]].add(tobb);
     }
 
     // helper functions
@@ -156,6 +167,7 @@ contract Joyso is Ownable {
     {
         uint256 orderBuyBalance = amountBuy.sub(orderBalance[makerHash]);
         uint256 orderSellBalance = orderBuyBalance.mul(amountSell).div(amountBuy);
+        // TODO: maybe we should check maker's balance here 
         if (tosb >= orderBuyBalance) { 
             tosb = tosb.sub(orderBuyBalance);
             tobb = tobb.add(orderSellBalance);
@@ -167,8 +179,18 @@ contract Joyso is Ownable {
             balances[tokenSell][maker] = balances[tokenSell].sub(orderSellBalance);
             balances[tokenBuy][maker] = balances[tokenBuy].add(orderBuyBalance);
         } else { // tosb < orderBuyBalance
-            uint256 actualBuyAmount = tosb.mul(amountSell).div(amountBuy);
-            uint256 actualSellAmount =  actualBuyAmount.mul().div();
+            
+            // fill the order balance
+            orderBalance[makerHash] = orderBalance[makerHash].add(tosb);
+            uint256 actualBuy = tosb.mul(amountSell).div(amountBuy);
+
+            // update the maker balance
+            balances[tokenSell][maker] = balances[tokenSell][maker].sub(tosb);
+            balances[tokenBuy][maker] = balances[tokenBuy][maker].add(actualBuy);
+
+            // update the tobb/tosb and return
+            tobb = tobb.add(actualBuy);
+            tosb = 0;
         }
     }
 }
