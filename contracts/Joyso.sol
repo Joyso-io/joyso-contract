@@ -9,15 +9,15 @@ import {StandardToken as Token} from "./lib/StandardToken.sol";
   */
 contract Joyso is Ownable {
     using SafeMath for uint256;
-    uint256 constant TIME_LOCK_PERIOD = 100000;
 
     mapping (address => mapping (address => uint256)) public balances;
+    mapping (address => uint256) public userLock;
     mapping (bytes32 => uint256) public orderFills;
-    mapping (address => uint256) public lastActive;
+    mapping (bytes32 => bool) public usedHash;
     mapping (address => bool) public isAdmin;
-    mapping (bytes32 => bool) public withdrawn;
 
     address public joysoWallet;
+    uint256 public lockPeriod = 100000; 
 
     modifier onlyAdmin {
         require(msg.sender == owner || isAdmin[msg.sender]);
@@ -27,6 +27,7 @@ contract Joyso is Ownable {
     //events
     event Deposit (address token, address user, uint256 amount, uint256 balance);
     event Withdraw(address token, address user, uint256 amount, uint256 balance);
+    event Lock (address user, uint256 timeLock);
  
     function Joyso (address _joysoWallet) {
         joysoWallet = _joysoWallet;
@@ -39,18 +40,16 @@ contract Joyso is Ownable {
     function depositToken (address token, uint256 amount) public {
         require(Token(token).transferFrom(msg.sender, this, amount));
         balances[token][msg.sender] = balances[token][msg.sender].add(amount);
-        lastActive[msg.sender] = block.number;
         Deposit(token, msg.sender, amount, balances[token][msg.sender]);
     }
 
     function depositEther () public payable {
         balances[0][msg.sender] = balances[0][msg.sender].add(msg.value);
-        lastActive[msg.sender] = block.number;
         Deposit(0, msg.sender, msg.value, balances[0][msg.sender]);
     }
 
     function withdraw (address token, uint256 amount) public {
-        require(block.number > lastActive[msg.sender] + TIME_LOCK_PERIOD);
+        require(block.number > userLock[msg.sender] && userLock[msg.sender] != 0);
         require(balances[token][msg.sender] >= amount);
         balances[token][msg.sender].sub(amount);
         if(token == 0) {
@@ -61,77 +60,123 @@ contract Joyso is Ownable {
         Withdraw(token, msg.sender, amount, balances[token][msg.sender]);       
     }
 
-    // user send the transaction, user pay the fee, need the admin's signatue to insure the tx schedule
-    function withdrawWithApproval (address token, uint256 amount, address admin, uint8 v, bytes32 r, bytes32 s, uint256 timestamp) public {
-        require (isAdmin[admin]);
-        bytes32 hash = keccak256("Joyso", msg.sender, token, amount, timestamp);
-        require (block.timestamp < timestamp + 10 minutes);
-        require (verify(hash, admin, v, r, s));
-        require (!withdrawn[hash]);
-        withdrawn[hash] = true;
-        require (balances[token][msg.sender] >= amount);
-        balances[token][msg.sender].sub(amount);
-        if (token == 0) {
-            msg.sender.transfer(amount);
-        } else {
-            require (Token(token).transfer(msg.sender, amount));
-        }
-        Withdraw(token, msg.sender, amount, balances[token][msg.sender]);       
+    function lockme () public {
+        userLock[msg.sender] = userLock[msg.sender].add(lockPeriod);
+        Lock (msg.sender, userLock[msg.sender]);
     }
 
-    // admin send the transaction, collect fees from user
-    function withdrawByAdmin (address token, uint256 amount, address user, uint8 v, bytes32 r, bytes32 s, uint256 timestamp, uint256 withdrawFee) onlyAdmin public {
-        require (withdrawFee < 50 finney);
-        bytes32 hash = keccak256("Joyso", token, amount, timestamp);
-        require (!withdrawn[hash]);
-        require (verify(hash, user, v, r, s));
-        require (balances[token][user] >= amount + withdrawFee);
-        balances[token][user].sub(amount);
-        balances[token][joysoWallet].add(withdrawFee);
-        withdrawn[hash] = true;
-        if (token == 0) {
-            msg.sender.transfer(amount);
-        } else {
-            require( Token(token).transfer(msg.sender, amount));
-        }
-        Withdraw(token, user, amount, balances[token][user]);       
+    function unlockme () public {
+        userLock[msg.sender] = 0;
+        Lock (msg.sender, userLock[msg.sender]);
     }
 
-    function makeMatches (address[] inputAddresses, uint256[] inputInts, uint8[] v, bytes32[] r, bytes32[] s) onlyAdmin public 
+    function withdrawByAdmin (address user, uint256[] inputs) onlyAdmin public {
+        /**
+            inputs[0] (uint256) amount;
+            inputs[1] (uint256) gasFee;
+            inputs[2] (bytes32) dataV
+            inputs[3] (bytes32) r
+            inputs[4] (bytes32) s
+            -----------------------------------
+            dataV[0 .. 1] (uint8) v
+            dataV[12..22] (uint256) timeStamp
+            dataV[23..23] (bool) byEther
+            dataV[24..63] (address) token
+            -----------------------------------
+            user withdraw singature
+            (this.address, amount, gasFee, data)
+            -----------------------------------
+            data [12..22] timestamp --> does not used when withdraw
+            data [23..23] byEther
+            data [24..63] token
+         */
+        bytes32 data = (bytes32)(inputs[2] & 0x00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
+        bytes32 hash = keccak256(this, inputs[0], inputs[1], data);
+        require (!usedHash[hash]);
+        uint256 v = inputs[2] / 0x00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+        require (verify(hash, user, (uint8)(v), (bytes32)(inputs[3]), (bytes32)(inputs[4])));
+
+        address token = (address)(inputs[2] & 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff);
+        bool byEther  = (data & 0x00000000000000000000000f0000000000000000000000000000000000000000) > 0;
+
+        if (byEther) {
+            require (balances[0][user] >= inputs[1]);
+            balances[0][user] = balances[0][user].sub(inputs[1]);
+            balances[0][joysoWallet] = balances[0][joysoWallet].add(inputs[1]);
+        } else {
+            require (balances[token][user] >= inputs[1]);
+            balances[token][user] = balances[token][user].sub(inputs[1]);
+            balances[token][joysoWallet] = balances[token][joysoWallet].add(inputs[1]);
+        }
+
+        require (balances[token][user] >= inputs[0]);
+        balances[token][user].sub(inputs[0]);
+        usedHash[hash] = true;
+
+        if (token == 0) {
+            msg.sender.transfer(inputs[0]);
+        } else {
+            require(Token(token).transfer(msg.sender, inputs[0]));
+        }
+    }
+
+    function matchByAdmin (uint256[] inputs) onlyAdmin public 
         // TODO: be sure the maker's ratio is better for taker 
         /**
-          * inputAddresses
-          * inputAddresses[0]: token1 
-          * inputAddresses[1]: token2
-          * inputAddresses[2]: taker, sell token2, buy token1
-          * inputAddresses[3]: maker1, sell token1, buy token2
-          * inputAddresses[4]: maker2, sell token1, buy token2
-          *
-          * inputInts
-          * inputInts[0]: amountSell of taker order
-          * inputInts[1]: amountBuy of taker order 
-          * inputInts[2]: timestamp of taker order
-          * inputInts[3*i]: amountSell of order i 
-          * inputInts[3*i+1]: amountBuy of order i 
-          * inputInts[3*i+2]: timestamp of order i 
-          */
+            inputs contain multiple orders 
+            order[0] will be taker
+            others will be maker
+         */
+        /**
+            for order i:
+            inputs[i*7]   (uint256) amountSell
+            inputs[i*7+1] (uint256) amountBuy
+            inputs[i*7+2] (uint256) gasFee
+            inputs[i*7+3] (bytes32) data1
+            inputs[i*7+4] (bytes32) data2V
+            inputs[i*7+5] (bytes32) r
+            inputs[i*7+6] (bytes32) s
+            -------------------------------------
+            data1[23..23] (bool) isBuy
+            data1[24..63] (address) token
+            data2V[0 .. 1] (uint256) v
+            data2V[9 ..12] (uint256) txFee
+            data2V[13..23] (uint256) timestamp
+            data2v[24..63] (address) user
+            -------------------------------------
+            user order signature
+            (this.address, amountSell, amountBuy, gasFee, data1, data2)
+            -------------------------------------
+            data1[23..23] (bool) isBuy
+            data1[24..63] (address) token
+            -------------------------------------
+            data2[9 ..12] (uint256) txFee
+            data2[13..23] (uint256) timestamp
+            data2[24..63] (address) user           
+          */      
     {
-        // keccak256(token2, token1, amountSell_taker, amountBuy_taker, timestamp)
-        bytes32 hash = keccak256(inputAddresses[1], inputAddresses[0], inputInts[0], inputInts[1], inputInts[2]);
-        require (verify(hash, inputAddresses[2], v[0], r[0], s[0]));
+        bytes32 data2 = (bytes32)(inputs[4] & 0x00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
+        bytes32 hash = keccak256(this, inputs[0], inputs[1], inputs[2], (bytes32)(inputs[3]), data2);
+        address user = (address)(data2 & 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff);
+        uint256 v = inputs[4] / 0x00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+        require (verify(hash, user, (uint8)(v), (bytes32)(inputs[5]), (bytes32)(inputs[6])));
         // every take order must first time on chain
         require(orderFills[hash] == 0);
-        uint256 tosb = inputInts[0]; // taker order sell balance
+        uint256 tosb = inputs[0]; // taker order sell balance
         uint256 tobb = 0; // taker order buy balance
 
-        for (uint256 i = 0; i < inputAddresses.length - 1; i++) {
+        for (uint256 i = 7; i < inputs.length - 1; i = i + 7) {
             // TODO: we should guerentee the maker's price is better than taker's price
             // TODO: should we guerentee the maker's price is better than the next maker's price?
             if (tosb <= 0) 
                 break;
-            bytes32 makeHash = keccak256(inputAddresses[i+3], inputAddresses[0], inputAddresses[1], inputInts[3*i], inputInts[3*i+1], inputInts[3*i+2]);
-            if (!verify(makeHash, inputAddresses[i+3], v[i], r[i], s[i])) 
+            data2 = (bytes32)(inputs[i+4] & 0x00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
+            bytes32 makeHash = keccak256(this, inputs[i], inputs[i+1], inputs[i+2], (bytes32)(inputs[i+3]), data2);
+            user = (address)(data2 & 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff);
+            v = inputs[i+4] / 0x00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+            if (!verify(makeHash, (uint8)(v), (bytes32)(inputs[i+5]), (bytes32)(inputs[i+6]))) 
                 continue; // Should we need the event if verify fail???
+            // internalTrade not yet implement 
             (tosb, tobb) = internalTrade(inputAddresses[i+3], inputAddresses[0], inputAddresses[1], inputInts[3*i], inputInts[3*i+1], makeHash, tosb, tobb);
         }
 
@@ -144,7 +189,7 @@ contract Joyso is Ownable {
         return balances[token][account];
     }
 
-    function queryOrderId (address maker, address tokenSell, address tokenBuy, uint256 amountSell, uint256 amountBuy, uint256 nonce) 
+    function getOrderHash (address maker, address tokenSell, address tokenBuy, uint256 amountSell, uint256 amountBuy, uint256 nonce) 
         public view returns (bytes32 hash) 
     {
         return keccak256("Joyso", maker, tokenSell, tokenBuy, amountSell, amountBuy, nonce);
