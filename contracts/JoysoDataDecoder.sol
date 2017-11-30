@@ -13,7 +13,7 @@ contract JoysoDataDecoder {
          isBuy = (data & 0x00000000000000000000000f0000000000000000000000000000000000000000) > 0;
     }
 
-    function decodeData2 (uint256 _data) public constant returns (uint256 txFee, uint256 timestamp, uint256 joyPrice, address userAddress) {
+    function decodeData2 (uint256 _data) public constant returns (uint256 txFee, uint256 timeStamp, uint256 joyPrice, address userAddress) {
         /**
             data2
             0x00 0014 160004a1170 0000000 b2f7eb1f2c37645be61d73953035360e768d81e6
@@ -25,13 +25,13 @@ contract JoysoDataDecoder {
         // Assume the _data is come after retriveV, which already eliminated the first two bytes.  
         txFee = _data / 0x000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
         _data = _data & 0x000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
-        timestamp = _data / 0x00000000000000000fffffffffffffffffffffffffffffffffffffffffffffff;
+        timeStamp = _data / 0x00000000000000000fffffffffffffffffffffffffffffffffffffffffffffff;
         _data = _data & 0x00000000000000000fffffffffffffffffffffffffffffffffffffffffffffff;
         joyPrice = _data / 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff;
         userAddress = (address)(_data & 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff);
     }
 
-    function decodeData3 (uint256 _data) public constant returns (uint256 timestamp, uint256 joyPrice, uint256 paymentMethod, address token) {
+    function decodeData3 (uint256 _data) public constant returns (uint256 timeStamp, uint256 joyPrice, uint256 paymentMethod, address token) {
         /**
             data3
             0x00000 160004a1170 0000000 1 b2f7eb1f2c37645be61d73953035360e768d81e6
@@ -41,7 +41,7 @@ contract JoysoDataDecoder {
             [24..63] (address) token
          */
         // Assume the _data is come after retriveV, which already eliminated the first two bytes.  
-        timestamp = _data / 0x0000000000000000ffffffffffffffffffffffffffffffffffffffffffffffff;
+        timeStamp = _data / 0x0000000000000000ffffffffffffffffffffffffffffffffffffffffffffffff;
         _data = _data & 0x0000000000000000ffffffffffffffffffffffffffffffffffffffffffffffff;
         joyPrice = _data / 0x00000000000000000000000fffffffffffffffffffffffffffffffffffffffff;
         _data = _data & 0x00000000000000000000000fffffffffffffffffffffffffffffffffffffffff;
@@ -49,21 +49,20 @@ contract JoysoDataDecoder {
         token = (address)(_data & 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff);
     }
 
-    function decodeData4 (uint256 _data) public constant returns (uint256 timestamp, address userAddress) {
+    function decodeData4 (uint256 _data) public constant returns (uint256 timeStamp, address userAddress) {
         /**
             data4 
             0x0000000000000 160004a1170 b2f7eb1f2c37645be61d73953035360e768d81e6
-            [13..23] (uint256) timestamp
+            [13..23] (uint256) timeStamp
             [24..63] (address) userAddress
          */
         // Assume the _data is come after retriveV, which already eliminated the first two bytes.  
-        timestamp = _data / 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff;
+        timeStamp = _data / 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff;
         userAddress = (address)(_data & 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff);
     }
 
     function retrieveV (uint256 _data) public constant returns (uint256 data, uint256 v) {
         v = _data / 0x00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
-        v = _data / 0x0100000000000000000000000000000000000000000000000000000000000000;
         data = _data & 0x00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
     }
 }

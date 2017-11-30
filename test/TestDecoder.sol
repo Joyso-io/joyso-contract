@@ -6,7 +6,9 @@ contract TestDecoder {
     uint256 constant data1 = 0x000000000000000000000001b2f7eb1f2c37645be61d73953035360e768d81e6;
     uint256 constant data2V = 0x1c0014160004a11703000000b2f7eb1f2c37645be61d73953035360e768d81e6;
     uint256 constant data3V = 0x1c000160004a117030000001b2f7eb1f2c37645be61d73953035360e768d81e6;
-    uint256 constant data4V = 0x1c00000000001160004a1170b2f7eb1f2c37645be61d73953035360e768d81e6;
+    uint256 constant data4V = 0x1c00000000000160004a1170b2f7eb1f2c37645be61d73953035360e768d81e6;
+
+    event Log(uint256 msg);
 
     function testDecodeData1 () public {
         JoysoDataDecoder aa = new JoysoDataDecoder();
@@ -25,8 +27,9 @@ contract TestDecoder {
         uint256 timeStamp;
         uint256 joyPrice;
         address userAddress;
-        (v_256, data) = aa.retrieveV(data2V);
-        Assert.equal(v_256, 0x1c, "v should be 1c");
+        (data, v_256) = aa.retrieveV(data2V);
+        Log(v_256);
+        Assert.equal(v_256, (uint256)(0x1c), "v should be 1c");
         (txFee, timeStamp, joyPrice, userAddress) = aa.decodeData2(data);
         Assert.equal(txFee, 0x0014, "txFee should be 14");
         Assert.equal(timeStamp, 0x160004a1170, "timeStamp should be 160004a1170");
@@ -42,7 +45,7 @@ contract TestDecoder {
         uint256 joyPrice;
         uint256 paymentMethod;
         address token;
-        (v_256, data) = aa.retrieveV(data3V);
+        (data, v_256) = aa.retrieveV(data3V);
         Assert.equal(v_256, 0x1c, "v should be 1c");
         (timeStamp, joyPrice, paymentMethod, token) = aa.decodeData3(data);
         Assert.equal(timeStamp, 0x160004a1170, "timeStamp should be 160004a1170");
@@ -57,7 +60,7 @@ contract TestDecoder {
         uint256 data;
         uint256 timeStamp;
         address userAddress;
-        (v_256, data) = aa.retrieveV(data4V);
+        (data, v_256) = aa.retrieveV(data4V);
         Assert.equal(v_256, 0x1c, "v should be 1c");
         (timeStamp, userAddress) = aa.decodeData4(data); 
         Assert.equal(timeStamp, 0x160004a1170, "timeStamp should be 160004a1170");
