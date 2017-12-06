@@ -2,6 +2,8 @@ pragma solidity ^0.4.17;
 
 contract JoysoDataDecoder {
 
+    event Log(uint log);
+
    function decodeData1 (uint256 data) public constant returns (bool isBuy, address token) {
         /**
             data1
@@ -35,7 +37,7 @@ contract JoysoDataDecoder {
    function decodeWithdrawData (uint256 _data) public constant returns (uint256 paymentMethod, uint256 tokenID, uint256 userID) {
         /**
             data3
-            0x000181bfeb 00000000000001 1 000000000000000000000000000 0002 00000001
+            0x000181bfeb 0000000000000 1 1 000000000000000000000000000 0002 00000001
             [ 0.. 9] (uint256) nonce         --> use for random hash             
             [23..23] (uint256) paymentMethod --> 0: ether, 1: Token, 2: joyToken
             [52..55] (uint256) tokenID
@@ -43,9 +45,13 @@ contract JoysoDataDecoder {
          */
         // Assume the _data is come after retriveV, which already eliminated the first two bytes.  
         paymentMethod = _data & 0x00000000000000000000000f0000000000000000000000000000000000000000;
-        _data = _data & 0x0000000000000000000000000000000000000000000000000000ffff00000000;
+        Log(_data);
+        _data = _data & 0x0000000000000000000000000000000000000000000000000000ffffffffffff;
+        Log(_data);
         tokenID = _data / 0x00000000000000000000000000000000000000000000000000000000ffffffff;
-        userID = _data & 0x0000000000000000000000000000000000000000000000000000ffffffffffff;
+        Log(tokenID);
+        userID = _data & 0x00000000000000000000000000000000000000000000000000000000ffffffff;
+        Log(userID);
     }
 
    function decodeData4 (uint256 _data) public constant returns (uint256 timeStamp, uint256 paymentMethod, address userAddress) {
@@ -64,7 +70,7 @@ contract JoysoDataDecoder {
 
    function retrieveV (uint256 _data) public constant returns (uint256 v) {
        // [24..24] v 0:27 1:28
-        if (_data & 0x0000000000000000000000000f00000000000000000000000000000000000000 == 0) {
+        if (_data & 0x000000000000000000000000f000000000000000000000000000000000000000 == 0) {
             v = 27;
         } else {
             v = 28;

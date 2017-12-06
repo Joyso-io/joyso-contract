@@ -11,6 +11,10 @@ import {StandardToken as Token} from "./lib/StandardToken.sol";
 contract Joyso is Ownable, JoysoDataDecoder {
     using SafeMath for uint256;
 
+    uint256 constant PAYWITHTOKEN = 0x0000000000000000000000020000000000000000000000000000000000000000;
+    uint256 constant PAYWITHJOY = 0x0000000000000000000000010000000000000000000000000000000000000000;
+    uint256 constant PAYWITHETHER = 0x0000000000000000000000000000000000000000000000000000000000000000;
+
     mapping (address => mapping (address => uint256)) public balances;
     mapping (address => uint256) public userLock;
     mapping (bytes32 => uint256) public orderFills;
@@ -126,11 +130,11 @@ contract Joyso is Ownable, JoysoDataDecoder {
         require (!usedHash[hash]);
         require (verify(hash, user, (uint8)(v_256), (bytes32)(inputs[3]), (bytes32)(inputs[4])));
 
-        if (paymentMethod == 1) { // pay fee by JOY
+        if (paymentMethod == PAYWITHJOY) { // pay fee by JOY
             require (balances[tokenID2Address[1]][user] >= inputs[1]/2); // we offer 50% off when using JOY 
             balances[tokenID2Address[1]][user] = balances[tokenID2Address[1]][user].sub(inputs[1]);
             balances[tokenID2Address[1]][joysoWallet] = balances[tokenID2Address[1]][joysoWallet].add(inputs[1]);
-        } else if (paymentMethod == 2) { // pay fee by tx token
+        } else if (paymentMethod == PAYWITHTOKEN) { // pay fee by tx token
             require (balances[token][user] >= inputs[1]);
             balances[token][user] = balances[token][user].sub(inputs[1]);
             balances[token][joysoWallet] = balances[token][joysoWallet].add(inputs[1]);
