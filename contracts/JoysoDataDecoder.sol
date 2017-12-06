@@ -2,18 +2,18 @@ pragma solidity ^0.4.17;
 
 contract JoysoDataDecoder {
 
-    function decodeData1 (uint256 data) public constant returns (bool isBuy, address token) {
+   function decodeData1 (uint256 data) public constant returns (bool isBuy, address token) {
         /**
             data1
             0x00000000000000000000000 1 b2f7eb1f2c37645be61d73953035360e768d81e6
             [23..23] (bool) isBuy
-            [24..63] (address) token 
+            [24..63] (address) token
          */
          token = (address)(data & 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff);
          isBuy = (data & 0x00000000000000000000000f0000000000000000000000000000000000000000) > 0;
     }
 
-    function decodeData2 (uint256 _data) public constant returns (uint256 txFee, uint256 timeStamp, uint256 joyPrice, address userAddress) {
+   function decodeData2 (uint256 _data) public constant returns (uint256 txFee, uint256 timeStamp, uint256 joyPrice, address userAddress) {
         /**
             data2
             0x00 0014 160004a1170 0000000 b2f7eb1f2c37645be61d73953035360e768d81e6
@@ -30,39 +30,48 @@ contract JoysoDataDecoder {
         joyPrice = _data / 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff;
         userAddress = (address)(_data & 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff);
     }
+    
 
-    function decodeData3 (uint256 _data) public constant returns (uint256 timeStamp, uint256 joyPrice, uint256 paymentMethod, address token) {
+   function decodeWithdrawData (uint256 _data) public constant returns (uint256 paymentMethod, uint256 tokenID, uint256 userID) {
         /**
             data3
-            0x00000 160004a1170 0000000 1 b2f7eb1f2c37645be61d73953035360e768d81e6
-            [5 ..15] (uint256) timestamp
-            [16..22] (uint256) joysoPrice
+            0x000181bfeb 00000000000001 1 000000000000000000000000000 0002 00000001
+            [ 0.. 9] (uint256) nonce         --> use for random hash             
             [23..23] (uint256) paymentMethod --> 0: ether, 1: Token, 2: joyToken
-            [24..63] (address) token
+            [52..55] (uint256) tokenID
+            [56..63] (address) userID
          */
         // Assume the _data is come after retriveV, which already eliminated the first two bytes.  
-        timeStamp = _data / 0x0000000000000000ffffffffffffffffffffffffffffffffffffffffffffffff;
-        _data = _data & 0x0000000000000000ffffffffffffffffffffffffffffffffffffffffffffffff;
-        joyPrice = _data / 0x00000000000000000000000fffffffffffffffffffffffffffffffffffffffff;
-        _data = _data & 0x00000000000000000000000fffffffffffffffffffffffffffffffffffffffff;
-        paymentMethod = _data / 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff;
-        token = (address)(_data & 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff);
+        paymentMethod = _data & 0x00000000000000000000000f0000000000000000000000000000000000000000;
+        _data = _data & 0x0000000000000000000000000000000000000000000000000000ffff00000000;
+        tokenID = _data / 0x00000000000000000000000000000000000000000000000000000000ffffffff;
+        userID = _data & 0x0000000000000000000000000000000000000000000000000000ffffffffffff;
     }
 
-    function decodeData4 (uint256 _data) public constant returns (uint256 timeStamp, address userAddress) {
+   function decodeData4 (uint256 _data) public constant returns (uint256 timeStamp, uint256 paymentMethod, address userAddress) {
         /**
-            data4 
-            0x0000000000000 160004a1170 b2f7eb1f2c37645be61d73953035360e768d81e6
-            [13..23] (uint256) timeStamp
+            data4
+            0x000000000000 160004a1170 1 b2f7eb1f2c37645be61d73953035360e768d81e6
+            [12..22] (uint256) timeStamp
+            [23..23] (uint256) paymentMethod
             [24..63] (address) userAddress
          */
         // Assume the _data is come after retriveV, which already eliminated the first two bytes.  
-        timeStamp = _data / 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff;
+        timeStamp = _data / 0x00000000000000000000000fffffffffffffffffffffffffffffffffffffffff;
+        paymentMethod = _data & 0x00000000000000000000000f0000000000000000000000000000000000000000;
         userAddress = (address)(_data & 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff);
     }
 
-    function retrieveV (uint256 _data) public constant returns (uint256 data, uint256 v) {
-        v = _data / 0x00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
-        data = _data & 0x00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
-    }
+   function retrieveV (uint256 _data) public constant returns (uint256 v) {
+       // [24..24] v 0:27 1:28
+        if (_data & 0x0000000000000000000000000f00000000000000000000000000000000000000 == 0) {
+            v = 27;
+        } else {
+            v = 28;
+        }
+   }
+
+   function genUserSignedData (uint256 _data, address _address) public constant returns (uint256 data) {
+       data = _data & (uint256)(_address);
+   }
 }
