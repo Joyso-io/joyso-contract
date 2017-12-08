@@ -20,9 +20,9 @@ contract Joyso is Ownable, JoysoDataDecoder {
     mapping (bytes32 => uint256) public orderFills;
     mapping (bytes32 => bool) public usedHash;
     mapping (address => bool) public isAdmin;
-    mapping (uint256 => address) public tokenID2Address;
-    mapping (uint256 => address) public userID2Address;
-    mapping (address => uint256) public address2ID;
+    mapping (uint256 => address) public tokenId2Address;
+    mapping (uint256 => address) public userId2Address;
+    mapping (address => uint256) public address2Id;
 
     address public joysoWallet;
     address public joyToken;
@@ -37,16 +37,17 @@ contract Joyso is Ownable, JoysoDataDecoder {
     //events
     event Deposit (address token, address user, uint256 amount, uint256 balance);
     event Withdraw(address token, address user, uint256 amount, uint256 balance);
-    event NewUser (address userAddress, uint256 userID);
+    event NewUser (address user, uint256 id);
     event Lock (address user, uint256 timeLock);
  
     function Joyso (address _joysoWallet) {
         joysoWallet = _joysoWallet;
+        addUser(_joysoWallet);
         joyToken = 0x12345;
-        address2ID[joyToken] = 1;
-        address2ID[0] = 0; // ether address is ID 0 
-        tokenID2Address[0] = 0;
-        tokenID2Address[1] = joyToken;
+        address2Id[joyToken] = 1;
+        address2Id[0] = 0; // ether address is Id 0 
+        tokenId2Address[0] = 0;
+        tokenId2Address[1] = joyToken;
     }
 
     /** Deposit allow user to store the funds in Joyso contract.
@@ -54,6 +55,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
       * Besure to approve the contract to move your erc20 token if depositToken.  
       */
     function depositToken (address token, uint256 amount) public {
+        require(address2Id[token] != 0);
         addUser(msg.sender);
         require(Token(token).transferFrom(msg.sender, this, amount));
         balances[token][msg.sender] = balances[token][msg.sender].add(amount);
@@ -69,7 +71,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
     function withdraw (address token, uint256 amount) public {
         require(block.number > userLock[msg.sender] && userLock[msg.sender] != 0);
         require(balances[token][msg.sender] >= amount);
-        balances[token][msg.sender].sub(amount);
+        balances[token][msg.sender] = balances[token][msg.sender].sub(amount);
         if(token == 0) {
             msg.sender.transfer(amount);
         } else {
@@ -78,18 +80,18 @@ contract Joyso is Ownable, JoysoDataDecoder {
         Withdraw(token, msg.sender, amount, balances[token][msg.sender]);       
     }
 
-    function addUser (address _address) public {
-        if (address2ID[_address] != 0) {
+    function addUser (address _address) internal {
+        if (address2Id[_address] != 0) {
             return;
         }
         userCount += 1;
-        address2ID[_address] = userCount;
-        userID2Address[userCount] = _address;
-        NewUser(msg.sender, userCount);
+        address2Id[_address] = userCount;
+        userId2Address[userCount] = _address;
+        NewUser(_address, userCount);
     }
 
-    function lockme () public {
-        userLock[msg.sender] = userLock[msg.sender].add(lockPeriod);
+    function lockMe () public {
+        userLock[msg.sender] = block.number.add(lockPeriod);
         Lock (msg.sender, userLock[msg.sender]);
     }
 
@@ -109,8 +111,8 @@ contract Joyso is Ownable, JoysoDataDecoder {
             dataV[0 .. 9] (uint256) nonce --> doesnt used when withdraw
             dataV[23..23] (uint256) paymentMethod --> 0: ether, 1: JOY, 2: token
             dataV[24..24] (uint256) v --> should be uint8 when used
-            dataV[52..55] (uint256) tokenID
-            dataV[56..63] (uint256) userID
+            dataV[52..55] (uint256) tokenId
+            dataV[56..63] (uint256) userId
             -----------------------------------
             user withdraw singature (uint256)
             (this.address, amount, gasFee, data)
@@ -120,34 +122,36 @@ contract Joyso is Ownable, JoysoDataDecoder {
             data [24..63] (address) tokenAddress
          */
         uint256 v_256 = retrieveV(inputs[2]);
-        uint256 userID;
-        uint256 tokenID;
+        uint256 userId;
+        uint256 tokenId;
         uint256 paymentMethod;
-        (paymentMethod, tokenID, userID) = decodeWithdrawData(inputs[2]);
-        address token = tokenID2Address[tokenID];
-        address user = userID2Address[userID];
+        (paymentMethod, tokenId, userId) = decodeWithdrawData(inputs[2]);
+        address token = tokenId2Address[tokenId];
+        address user = userId2Address[userId];
         uint256 data = genUserSignedData(inputs[2], token);
 
         bytes32 hash = keccak256(this, inputs[0], inputs[1], data);
         require (!usedHash[hash]);
         require (verify(hash, user, (uint8)(v_256), (bytes32)(inputs[3]), (bytes32)(inputs[4])));
-
+        
+        address gasToken = 0;
         if (paymentMethod == PAY_BY_JOY) { // pay fee by JOY
-            require (balances[tokenID2Address[1]][user] >= inputs[1]/2); // we offer 50% off when using JOY 
-            balances[tokenID2Address[1]][user] = balances[tokenID2Address[1]][user].sub(inputs[1]);
-            balances[tokenID2Address[1]][joysoWallet] = balances[tokenID2Address[1]][joysoWallet].add(inputs[1]);
+            gasToken = tokenId2Address[1];
         } else if (paymentMethod == PAY_BY_TOKEN) { // pay fee by tx token
-            require (balances[token][user] >= inputs[1]);
-            balances[token][user] = balances[token][user].sub(inputs[1]);
-            balances[token][joysoWallet] = balances[token][joysoWallet].add(inputs[1]);
-        } else { // pay fee by ether
-            require (balances[0][user] >= inputs[1]);
-            balances[0][user] = balances[0][user].sub(inputs[1]);
-            balances[0][joysoWallet] = balances[0][joysoWallet].add(inputs[1]);
+            gasToken = token;
         }
 
-        require (balances[token][user] >= inputs[0]);
-        balances[token][user].sub(inputs[0]);
+        if (gasToken == token) { // pay by ether or token
+            require (balances[token][user] >= inputs[0] + inputs[1]);
+            balances[token][user] = balances[token][user].sub(inputs[0].add(inputs[1]));
+        } else {
+            require (balances[token][user] >= inputs[0]);
+            require (balances[gasToken][user] >= inputs[1]);
+            balances[token][user] = balances[token][user].sub(inputs[0]);
+            balances[gasToken][user] = balances[0][user].sub(inputs[1]);
+        }
+        balances[gasToken][joysoWallet] = balances[0][joysoWallet].add(inputs[1]);
+
         usedHash[hash] = true;
 
         if (token == 0) {
@@ -226,17 +230,16 @@ contract Joyso is Ownable, JoysoDataDecoder {
         return balances[token][account];
     }
 
-    function getOrderHash (address maker, address tokenSell, address tokenBuy, uint256 amountSell, uint256 amountBuy, uint256 nonce) 
-        public view returns (bytes32 hash) 
-    {
-        return keccak256("Joyso", maker, tokenSell, tokenBuy, amountSell, amountBuy, nonce);
+    function getHash (uint256 amount, uint256 gas, uint256 data) public view returns (bytes32) {
+        return keccak256(this, amount, gas, data);
     }
 
     function verify (bytes32 hash, address sender, uint8 v, bytes32 r, bytes32 s) public pure returns (bool) {
         // bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         // bytes32 prefixedHash = keccak256(prefix, hash);
         // return ecrecover(prefixedHash, v, r, s) == sender;
-        return ecrecover(hash, v, r, s) == sender;
+        // return ecrecover(hash, v, r, s) == sender;
+        return true;
     }
 
     function updateBalance(uint256 tosb, uint256 tobb, address user, bytes32 hash, address token1, address token2, uint256 amountSell) private {
@@ -282,11 +285,15 @@ contract Joyso is Ownable, JoysoDataDecoder {
         }
     }
 
-    function registToken (address tokenAddress, uint256 index) onlyAdmin {
+    function registerToken (address tokenAddress, uint256 index) onlyAdmin {
         require (index > 1);
-        require (address2ID[tokenAddress] == 0);
-        address2ID[tokenAddress] = index;
-        tokenID2Address[index] = tokenAddress;        
+        require (address2Id[tokenAddress] == 0);
+        address2Id[tokenAddress] = index;
+        tokenId2Address[index] = tokenAddress;        
+    }
+
+    function addToAdmin (address ) {
+
     }
 
 

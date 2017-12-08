@@ -2,8 +2,6 @@ pragma solidity ^0.4.17;
 
 contract JoysoDataDecoder {
 
-    event Log(uint log);
-
    function decodeData1 (uint256 data) public constant returns (bool isBuy, address token) {
         /**
             data1
@@ -45,13 +43,9 @@ contract JoysoDataDecoder {
          */
         // Assume the _data is come after retriveV, which already eliminated the first two bytes.  
         paymentMethod = _data & 0x00000000000000000000000f0000000000000000000000000000000000000000;
-        Log(_data);
         _data = _data & 0x0000000000000000000000000000000000000000000000000000ffffffffffff;
-        Log(_data);
         tokenID = _data / 0x00000000000000000000000000000000000000000000000000000000ffffffff;
-        Log(tokenID);
         userID = _data & 0x00000000000000000000000000000000000000000000000000000000ffffffff;
-        Log(userID);
     }
 
    function decodeData4 (uint256 _data) public constant returns (uint256 timeStamp, uint256 paymentMethod, address userAddress) {
@@ -78,6 +72,7 @@ contract JoysoDataDecoder {
    }
 
    function genUserSignedData (uint256 _data, address _address) public constant returns (uint256 data) {
-       data = _data & (uint256)(_address);
+       data = data & 0xffffffffffffffffffffffff0000000000000000000000000000000000000000;
+       data = _data | (uint256)(_address);
    }
 }
