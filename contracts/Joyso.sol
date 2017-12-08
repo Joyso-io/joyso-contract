@@ -5,8 +5,8 @@ import "./lib/Ownable.sol";
 import "./JoysoDataDecoder.sol";
 import {StandardToken as Token} from "./lib/StandardToken.sol";
 
-/** @title Joyso contract 
-  * 
+/** @title Joyso contract
+  *
   */
 contract Joyso is Ownable, JoysoDataDecoder {
     using SafeMath for uint256;
@@ -26,7 +26,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
 
     address public joysoWallet;
     address public joyToken;
-    uint256 public lockPeriod = 100000; 
+    uint256 public lockPeriod = 100000;
     uint256 public userCount;
 
     modifier onlyAdmin {
@@ -39,20 +39,20 @@ contract Joyso is Ownable, JoysoDataDecoder {
     event Withdraw(address token, address user, uint256 amount, uint256 balance);
     event NewUser (address user, uint256 id);
     event Lock (address user, uint256 timeLock);
- 
+
     function Joyso (address _joysoWallet) {
         joysoWallet = _joysoWallet;
         addUser(_joysoWallet);
         joyToken = 0x12345;
         address2Id[joyToken] = 1;
-        address2Id[0] = 0; // ether address is Id 0 
+        address2Id[0] = 0; // ether address is Id 0
         tokenId2Address[0] = 0;
         tokenId2Address[1] = joyToken;
     }
 
     /** Deposit allow user to store the funds in Joyso contract.
       * It is more convenient to transfer funds or to trade in contract.
-      * Besure to approve the contract to move your erc20 token if depositToken.  
+      * Besure to approve the contract to move your erc20 token if depositToken.
       */
     function depositToken (address token, uint256 amount) public {
         require(address2Id[token] != 0);
@@ -77,7 +77,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         } else {
             require(Token(token).transfer(msg.sender, amount));
         }
-        Withdraw(token, msg.sender, amount, balances[token][msg.sender]);       
+        Withdraw(token, msg.sender, amount, balances[token][msg.sender]);
     }
 
     function addUser (address _address) internal {
@@ -133,16 +133,16 @@ contract Joyso is Ownable, JoysoDataDecoder {
         bytes32 hash = keccak256(this, inputs[0], inputs[1], data);
         require (!usedHash[hash]);
         require (verify(hash, user, (uint8)(v_256), (bytes32)(inputs[3]), (bytes32)(inputs[4])));
-        
+
         address gasToken = 0;
         if (paymentMethod == PAY_BY_JOY) { // pay fee by JOY
-            gasToken = tokenId2Address[1];
+            gasToken = joyToken;
         } else if (paymentMethod == PAY_BY_TOKEN) { // pay fee by tx token
             gasToken = token;
         }
 
         if (gasToken == token) { // pay by ether or token
-            require (balances[token][user] >= inputs[0] + inputs[1]);
+            require (balances[token][user] >= inputs[0].add(inputs[1]));
             balances[token][user] = balances[token][user].sub(inputs[0].add(inputs[1]));
         } else {
             require (balances[token][user] >= inputs[0]);
@@ -150,7 +150,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
             balances[token][user] = balances[token][user].sub(inputs[0]);
             balances[gasToken][user] = balances[0][user].sub(inputs[1]);
         }
-        balances[gasToken][joysoWallet] = balances[0][joysoWallet].add(inputs[1]);
+        balances[gasToken][joysoWallet] = balances[gasToken][joysoWallet].add(inputs[1]);
 
         usedHash[hash] = true;
 
@@ -289,7 +289,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         require (index > 1);
         require (address2Id[tokenAddress] == 0);
         address2Id[tokenAddress] = index;
-        tokenId2Address[index] = tokenAddress;        
+        tokenId2Address[index] = tokenAddress;
     }
 
     function addToAdmin (address ) {
