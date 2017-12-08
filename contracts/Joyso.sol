@@ -292,8 +292,8 @@ contract Joyso is Ownable, JoysoDataDecoder {
         tokenId2Address[index] = tokenAddress;
     }
 
-    function addToAdmin (address ) {
-
+    function addToAdmin (address admin, bool isAdd) onlyAdmin {
+        isAdmin[admin] = isAdd;
     }
 
 
