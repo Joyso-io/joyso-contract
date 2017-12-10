@@ -2,7 +2,7 @@ pragma solidity ^0.4.17;
 
 contract JoysoDataDecoder {
 
-   function decodeData1 (uint256 data) public constant returns (bool isBuy, address token) {
+   function decodeData1 (uint256 data) public view returns (bool isBuy, address token) {
         /**
             data1
             0x00000000000000000000000 1 b2f7eb1f2c37645be61d73953035360e768d81e6
@@ -13,7 +13,7 @@ contract JoysoDataDecoder {
          isBuy = (data & 0x00000000000000000000000f0000000000000000000000000000000000000000) > 0;
     }
 
-   function decodeData2 (uint256 _data) public constant returns (uint256 txFee, uint256 timeStamp, uint256 joyPrice, address userAddress) {
+   function decodeData2 (uint256 _data) public view returns (uint256 txFee, uint256 timeStamp, uint256 joyPrice, address userAddress) {
         /**
             data2
             0x00 0014 160004a1170 0000000 b2f7eb1f2c37645be61d73953035360e768d81e6
@@ -32,7 +32,7 @@ contract JoysoDataDecoder {
     }
     
 
-   function decodeWithdrawData (uint256 _data) public constant returns (uint256 paymentMethod, uint256 tokenID, uint256 userID) {
+   function decodeWithdrawData (uint256 _data) public view returns (uint256 paymentMethod, uint256 tokenID, uint256 userID) {
         /**
             data3
             0x000181bfeb 0000000000000 1 1 000000000000000000000000000 0002 00000001
@@ -48,7 +48,7 @@ contract JoysoDataDecoder {
         userID = _data & 0x00000000000000000000000000000000000000000000000000000000ffffffff;
     }
 
-   function decodeData4 (uint256 _data) public constant returns (uint256 timeStamp, uint256 paymentMethod, address userAddress) {
+   function decodeData4 (uint256 _data) public view returns (uint256 timeStamp, uint256 paymentMethod, address userAddress) {
         /**
             data4
             0x000000000000 160004a1170 1 b2f7eb1f2c37645be61d73953035360e768d81e6
@@ -62,7 +62,7 @@ contract JoysoDataDecoder {
         userAddress = (address)(_data & 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff);
     }
 
-   function retrieveV (uint256 _data) public constant returns (uint256 v) {
+   function retrieveV (uint256 _data) public view returns (uint256 v) {
        // [24..24] v 0:27 1:28
         if (_data & 0x000000000000000000000000f000000000000000000000000000000000000000 == 0) {
             v = 27;
@@ -71,8 +71,8 @@ contract JoysoDataDecoder {
         }
    }
 
-   function genUserSignedData (uint256 _data, address _address) public constant returns (uint256 data) {
-       data = data & 0xffffffffffffffffffffffff0000000000000000000000000000000000000000;
+   function genUserSignedData (uint256 _data, address _address) public view returns (uint256 data) {
+       _data = _data & 0xffffffffffffffffffffffff0000000000000000000000000000000000000000;
        data = _data | (uint256)(_address);
    }
 }
