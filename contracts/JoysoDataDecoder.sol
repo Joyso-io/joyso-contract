@@ -144,4 +144,12 @@ contract JoysoDataDecoder {
         _data = _data | _isBuy;
         data = _data | (uint256)(_address);
     }
+
+    function subArray (uint256 from, uint256 to, uint256[] array) public view returns (uint256[]) {
+        uint256[] temp;
+        for(uint256 i = from; i <= to; i++){
+            temp.push(array[i]);
+        }
+        return temp;
+    }
 }
