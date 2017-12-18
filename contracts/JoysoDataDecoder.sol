@@ -4,9 +4,7 @@ contract JoysoDataDecoder {
 
     uint256 constant ORDER_ISBUY = 0x0000000000000000000000010000000000000000000000000000000000000000;
 
-   function decodeTakerOrderData (uint256 data) public view returns (uint256 nonce, uint256 takerFee,
-                                                                uint256 joyPrice, uint256 isBuy, uint256 tokenId, 
-                                                                uint256 userId, uint256 v_256) 
+   function decodeTakerOrderData (uint256 data) public view returns (uint256[7] memory datas) 
     {
         /**
             OrderData (dataV)
@@ -20,62 +18,72 @@ contract JoysoDataDecoder {
             dataV[52..55] (uint256) tokenBuyId
             dataV[56..63] (uint256) userId
         */
+        uint256 v_256;
         if (data & 0x000000000000000000000000f000000000000000000000000000000000000000 == 0) {
             v_256 = 27;
         } else {
             v_256 = 28;
         }
-        nonce = data / 0x00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+        uint256 nonce = data / 0x00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
         data = data & 0x00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
-        takerFee = data / 0x000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff;
+        uint256 takerFee = data / 0x000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff;
         data = data & 0x0000000000000000ffffffffffffffffffffffffffffffffffffffffffffffff;
-        joyPrice = data / 0x00000000000000000000000fffffffffffffffffffffffffffffffffffffffff;
+        uint256 joyPrice = data / 0x00000000000000000000000fffffffffffffffffffffffffffffffffffffffff;
         data = data & 0x000000000000000000000000000000000000000000000000ffffffffffffffff;
         uint256 tokenSellId = data / 0x0000000000000000000000000000000000000000000000000000ffffffffffff;
         data = data & 0x0000000000000000000000000000000000000000000000000000ffffffffffff;
         uint256 tokenBuyId = data / 0x00000000000000000000000000000000000000000000000000000000ffffffff;
-        userId = data & 0x00000000000000000000000000000000000000000000000000000000ffffffff;
-        isBuy = 0;
-        tokenId = tokenSellId;
+        uint256 userId = data & 0x00000000000000000000000000000000000000000000000000000000ffffffff;
+        uint256 isBuy = 0;
+        uint256 tokenId = tokenSellId;
         if (tokenBuyId > tokenSellId) {
             tokenId = tokenBuyId;
             isBuy = ORDER_ISBUY;
         }
+        // uint256[] memory temp = new uint256[](7);
+        // temp[0] = nonce;   // 0
+        // temp[1] = takerFee;// 1
+        // temp[2] = joyPrice;// 2
+        // temp[3] = isBuy;   // 3
+        // temp[4] = tokenId; // 4
+        // temp[5] = userId;  // 5
+        // temp[6] = v_256;   // 6
+        datas = [nonce, takerFee, joyPrice, isBuy, tokenId, userId, v_256];
     }
 
-    function decodeOrderNonce (uint256 data) public view returns (uint256 nonce) {
+    function decodeOrderNonce (uint256 data) public pure returns (uint256 nonce) {
         nonce = data / 0x00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
     }
 
-    function decodeOrderTakerFee (uint256 data) public view returns (uint256 takerFee) {
+    function decodeOrderTakerFee (uint256 data) public pure returns (uint256 takerFee) {
         data = data & 0x00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
         takerFee = data / 0x000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff;       
     }
 
-    function decodeOrderMakerFee (uint256 data) public view returns (uint256 makerFee) {
+    function decodeOrderMakerFee (uint256 data) public pure returns (uint256 makerFee) {
         data = data & 0x000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff;
         makerFee = data / 0x0000000000000000ffffffffffffffffffffffffffffffffffffffffffffffff; 
     }
 
-    function decodeOrderJoyPrice (uint256 data) public view returns (uint256 joyPrice) {
+    function decodeOrderJoyPrice (uint256 data) public pure returns (uint256 joyPrice) {
         data = data & 0x0000000000000000ffffffffffffffffffffffffffffffffffffffffffffffff;
         joyPrice = data / 0x00000000000000000000000fffffffffffffffffffffffffffffffffffffffff;        
     }
 
-    function decodeOrderTokenIdAndIsBuy (uint256 data) public view returns (uint256 tokenId, uint256 isBuy) {
+    function decodeOrderTokenIdAndIsBuy (uint256 data) public pure returns (uint256 tokenId, uint256 isBuy) {
         data = data & 0x000000000000000000000000000000000000000000000000ffffffffffffffff;
         uint256 tokenSellId = data / 0x0000000000000000000000000000000000000000000000000000ffffffffffff;
         data = data & 0x0000000000000000000000000000000000000000000000000000ffffffffffff;
         uint256 tokenBuyId = data / 0x00000000000000000000000000000000000000000000000000000000ffffffff;
         isBuy = 0;
         tokenId = tokenSellId;
-        if (tokenBuyId > tokenSellId) {
+        if (tokenSellId == 0) {
             tokenId = tokenBuyId;
             isBuy = ORDER_ISBUY;
         }
     }
 
-    function decodeOrderUserId (uint256 data) public view returns (uint256 userId) {
+    function decodeOrderUserId (uint256 data) public pure returns (uint256 userId) {
         userId = data & 0x00000000000000000000000000000000000000000000000000000000ffffffff;
     }
 
@@ -147,7 +155,7 @@ contract JoysoDataDecoder {
 
     function subArray (uint256 from, uint256 to, uint256[] array) public view returns (uint256[]) {
         uint256[] temp;
-        for(uint256 i = from; i <= to; i++){
+        for(uint256 i = from; i <= to; i++) {
             temp.push(array[i]);
         }
         return temp;
