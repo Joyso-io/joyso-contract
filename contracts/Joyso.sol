@@ -260,12 +260,12 @@ contract Joyso is Ownable, JoysoDataDecoder {
     function updateTakerBalance (uint256[] inputs, uint256 tosb, uint256 tobb, uint256 isBuy, uint256 tokenId, bytes32 orderHash) {
         uint256 etherGet;
         uint256 tokenGet;
-        if (isBuy == ORDER_ISBUY) { // (to maker) buy ether, sell token --> tosb uint is ether, tobb unit is token
-            etherGet = tosb;
-            tokenGet = tobb;
-        } else {
+        if (isBuy == ORDER_ISBUY) { // (to maker) buy token, sell ether --> (to taker) tosb unit is token, tobb unit is ether
             etherGet = tobb;
             tokenGet = tosb;
+        } else {
+            etherGet = tosb;
+            tokenGet = tobb;
         }
         uint256 etherFee = calculateEtherFee(inputs, etherGet, orderHash);
         uint256 joyFee = calculateJoyFee(inputs, etherGet, orderHash);
@@ -285,24 +285,24 @@ contract Joyso is Ownable, JoysoDataDecoder {
     }
 
     function updateTakerOrder(uint256 isBuy, uint256 _tosb, uint256 _tobb, uint256 etherGet, uint256 tokenGet) returns (uint256 tosb, uint256 tobb) {
-        if (isBuy == ORDER_ISBUY) { // (to maker) buy ether, sell token --> _tosb uint is ether, _tobb unit is token
-            tosb = _tosb.sub(etherGet);
-            tobb = _tobb.add(tokenGet);
-        } else {
+        if (isBuy == ORDER_ISBUY) { // (to maker) buy token, sell ether --> (to taker) _tosb unit is token, _tobb unit is ether
             tosb = _tosb.sub(tokenGet);
             tobb = _tobb.add(etherGet);
+        } else {
+            tosb = _tosb.sub(etherGet);
+            tobb = _tobb.add(tokenGet);
         }
     }
 
     function updateUserBalance(uint256[] inputs, uint256 isBuy, uint256 etherGet, uint256 tokenGet, uint256 etherFee, uint256 joyFee, uint256 tokenId) internal {
         address user = userId2Address[decodeOrderUserId(inputs[3])];
         address token = tokenId2Address[tokenId];
-        if (isBuy == ORDER_ISBUY) { // buy ether, sell token
-            balances[0][user] = balances[0][user].add(etherGet.sub(etherFee));
-            balances[token][user] = balances[token][user].sub(tokenGet);
-        } else {
+        if (isBuy == ORDER_ISBUY) { // buy token, sell ether
             balances[0][user] = balances[0][user].sub(etherGet.add(etherFee));
             balances[token][user] = balances[token][user].add(tokenGet);
+        } else {
+            balances[0][user] = balances[0][user].add(etherGet.sub(etherFee));
+            balances[token][user] = balances[token][user].sub(tokenGet);
         }
 
         if(joyFee != 0) {
@@ -349,14 +349,14 @@ contract Joyso is Ownable, JoysoDataDecoder {
 
     function calculateEtherGet (uint256[] inputs, uint256 _tosb, uint256 isBuy, bytes32 orderHash) view returns (uint256) {
         uint256 tradeAmount = inputs[1].sub(orderFills[orderHash]);
-        if (_tosb >= tradeAmount && isBuy == ORDER_ISBUY) { // buy ether, the unit of amountBuy is Ether
-            return inputs[1].sub(orderFills[orderHash]);
-        } else if (_tosb >= tradeAmount && isBuy == 0) {    // sell ether, the unit of amountBuy is token, turn to ether 
+        if (_tosb >= tradeAmount && isBuy == ORDER_ISBUY) { // buy token, the unit of amountBuy is token, turn to ether
             return inputs[1].sub(orderFills[orderHash]).mul(inputs[0]).div(inputs[1]);
-        } else if (_tosb < tradeAmount && isBuy == ORDER_ISBUY) { // buy ether, the unit of amountBuy is Ether
-            return _tosb;
-        } else { // matchCase == 2 && isBuy == 0
+        } else if (_tosb >= tradeAmount && isBuy == 0) {    // sell token, the unit of amountBuy is ether 
+            return inputs[1].sub(orderFills[orderHash]);
+        } else if (_tosb < tradeAmount && isBuy == ORDER_ISBUY) { // buy token, the unit of amountBuy is token, turn to ether
             return _tosb.mul(inputs[0]).div(inputs[1]);
+        } else {
+            return _tosb;
         }
     }
 }
