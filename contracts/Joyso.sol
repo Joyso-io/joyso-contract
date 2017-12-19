@@ -224,13 +224,13 @@ contract Joyso is Ownable, JoysoDataDecoder {
             data [23..23] (uint256) isBuy --> always 0, should be modified in contract
             data [24..63] (address) tokenAddress
          */
-        uint256[7] memory datas = this.decodeTakerOrderData(inputs[3]);
-        bytes32 orderHash = getOrderDataHash(inputs[0], inputs[1], inputs[2], genUserSignedOrderData(inputs[3], datas[3], tokenId2Address[datas[4]]));
+        var (tokenId, isBuy) = decodeOrderTokenIdAndIsBuy(inputs[3]);
+        bytes32 orderHash = getOrderDataHash(inputs[0], inputs[1], inputs[2], genUserSignedOrderData(inputs[3], isBuy, tokenId2Address[tokenId]));
         // TODO: should check the nonce here
         require (orderFills[orderHash] == 0);
         require (verify(orderHash, userId2Address[decodeOrderUserId(inputs[3])], (uint8)(retrieveV(inputs[3])), (bytes32)(inputs[4]), (bytes32)(inputs[5])));
 
-        datas[3] = datas[3] ^ ORDER_ISBUY;
+        isBuy = isBuy ^ ORDER_ISBUY;
         uint256 tosb = inputs[0]; // taker order sell balance
         uint256 tobb = 0;  // taker order buy balance
         for (uint256 i = 6; i < inputs.length; i+=6) {
@@ -238,14 +238,12 @@ contract Joyso is Ownable, JoysoDataDecoder {
             // TODO: should we guerentee the maker's price is better than the next maker's price?
             if (tosb <= 0) 
                 break;
-            bytes32 makerOrderHash = getOrderDataHash(inputs[i], inputs[i+1], inputs[i+2], genUserSignedOrderData(inputs[i+3], datas[3], tokenId2Address[datas[4]]));
+            bytes32 makerOrderHash = getOrderDataHash(inputs[i], inputs[i+1], inputs[i+2], genUserSignedOrderData(inputs[i+3], isBuy, tokenId2Address[tokenId]));
             require(verify(makerOrderHash, userId2Address[decodeOrderUserId(inputs[i+3])], (uint8)(retrieveV(inputs[i+3])), (bytes32)(inputs[i+4]), (bytes32)(inputs[i+5])));
-            // internalTrade not yet implement 
-            //(tosb, tobb) = internalTrade(inputs[i], inputs[i+1], tosb, tobb, inputs[i+3], inputs[i+2], isBuy, tokenId2Address[0], makerOrderHash); 
-            (tosb, tobb) = internalTrade(subArray(i, i+3, inputs), tosb, tobb, datas[3], datas[4], makerOrderHash);
+            (tosb, tobb) = internalTrade(subArray(i, i+3, inputs), tosb, tobb, isBuy, tokenId, makerOrderHash);
         }
 
-        updateTakerBalance(subArray(0, 3, inputs), tosb, tobb, datas[3], datas[4], orderHash);
+        updateTakerBalance(subArray(0, 3, inputs), tosb, tobb, isBuy, tokenId, orderHash);
     }
 
     // -------------------------------------------- internal/private function
@@ -278,8 +276,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
     function internalTrade (uint256[] inputs, uint256 _tosb, uint256 _tobb, uint256 isBuy, uint256 tokenId, bytes32 orderHash) 
         internal returns (uint256 tosb, uint256 tobb) 
     {
-        uint256 matchCase = determinedMatchCase(inputs, _tosb, orderHash);
-        uint256 etherGet = calculateEtherGet(matchCase, inputs, _tosb, isBuy, orderHash);
+        uint256 etherGet = calculateEtherGet(inputs, _tosb, isBuy, orderHash);
         uint256 tokenGet = calculateTokenGet(inputs, etherGet);
         uint256 etherFee = calculateEtherFee(inputs, etherGet, orderHash);
         uint256 joyFee = calculateJoyFee(inputs, etherGet, orderHash);
@@ -313,15 +310,6 @@ contract Joyso is Ownable, JoysoDataDecoder {
             balances[joyToken][joysoWallet] = balances[joyToken][joysoWallet].add(joyFee);
         } else { 
             balances[0][joysoWallet] = balances[0][joysoWallet].add(etherFee);
-        }
-    }
-
-    function determinedMatchCase (uint256[] inputs, uint256 _tosb, bytes32 orderHash) view returns (uint256) {
-        uint256 tradeAmount = inputs[1].sub(orderFills[orderHash]);
-        if (_tosb >= tradeAmount) {
-            return 1;
-        } else {
-            return 2;
         }
     }
 
@@ -359,12 +347,13 @@ contract Joyso is Ownable, JoysoDataDecoder {
         return etherGet.mul(inputs[1]).div(inputs[0]);
     }
 
-    function calculateEtherGet (uint256 matchCase, uint256[] inputs, uint256 _tosb, uint256 isBuy, bytes32 orderHash) view returns (uint256) {
-        if (matchCase == 1 && isBuy == ORDER_ISBUY) { // buy ether, the unit of amountBuy is Ether
+    function calculateEtherGet (uint256[] inputs, uint256 _tosb, uint256 isBuy, bytes32 orderHash) view returns (uint256) {
+        uint256 tradeAmount = inputs[1].sub(orderFills[orderHash]);
+        if (_tosb >= tradeAmount && isBuy == ORDER_ISBUY) { // buy ether, the unit of amountBuy is Ether
             return inputs[1].sub(orderFills[orderHash]);
-        } else if (matchCase == 1 && isBuy == 0) {    // sell ether, the unit of amountBuy is token, turn to ether 
+        } else if (_tosb >= tradeAmount && isBuy == 0) {    // sell ether, the unit of amountBuy is token, turn to ether 
             return inputs[1].sub(orderFills[orderHash]).mul(inputs[0]).div(inputs[1]);
-        } else if (matchCase == 2 && isBuy == ORDER_ISBUY) { // buy ether, the unit of amountBuy is Ether
+        } else if (_tosb < tradeAmount && isBuy == ORDER_ISBUY) { // buy ether, the unit of amountBuy is Ether
             return _tosb;
         } else { // matchCase == 2 && isBuy == 0
             return _tosb.mul(inputs[0]).div(inputs[1]);
