@@ -36,16 +36,4 @@ contract TestDecoder {
         Assert.equal(aa.decodeOrderUserId(ORDER_V), 1, "userId should be 1");
     }
 
-    // function testDecodeData4 () public {
-    //     JoysoDataDecoder aa = new JoysoDataDecoder();
-    //     uint256 v_256;
-    //     uint256 data;
-    //     uint256 timeStamp;
-    //     address userAddress;
-    //     (data, v_256) = aa.retrieveV(data4V);
-    //     Assert.equal(v_256, 0x1c, "v should be 1c");
-    //     (timeStamp, userAddress) = aa.decodeData4(data); 
-    //     Assert.equal(timeStamp, 0x160004a1170, "timeStamp should be 160004a1170");
-    //     Assert.equal(userAddress, 0xb2f7eb1f2c37645be61d73953035360e768d81e6, "userAddress should be 0xb2f7eb1f2c37645be61d73953035360e768d81e6");
-    // }
 }
