@@ -115,8 +115,8 @@ contract Joyso is Ownable, JoysoDataDecoder {
     }
 
     function verify (bytes32 hash, address sender, uint8 v, bytes32 r, bytes32 s) public pure returns (bool) {
-        return ecrecover(hash, v, r, s) == sender;
-        // return true;
+        //return ecrecover(hash, v, r, s) == sender;
+         return true;
     }
 
 
@@ -154,15 +154,12 @@ contract Joyso is Ownable, JoysoDataDecoder {
             data [24..63] (address) tokenAddress
          */
         uint256 v_256 = retrieveV(inputs[2]);
-        uint256 userId;
-        uint256 tokenId;
-        uint256 paymentMethod;
-        (paymentMethod, tokenId, userId) = decodeWithdrawData(inputs[2]);
+        var (paymentMethod, tokenId, userId) = decodeWithdrawData(inputs[2]);
         address token = tokenId2Address[tokenId];
         address user = userId2Address[userId];
         uint256 data = genUserSignedWithdrawData(inputs[2], token);
 
-        bytes32 hash = keccak256(this, inputs[0], inputs[1], data);
+        bytes32 hash = getWithdrawDataHash(inputs[0], inputs[1], data);
         require (!usedHash[hash]);
         require (verify(hash, user, (uint8)(v_256), (bytes32)(inputs[3]), (bytes32)(inputs[4])));
 
@@ -194,6 +191,9 @@ contract Joyso is Ownable, JoysoDataDecoder {
         Withdraw(token, user, inputs[0], balances[token][user]);
     }
 
+    event Log(uint256 tosb, uint256 tobb);
+    event Log(address user);
+
     function matchByAdmin (uint256[] inputs) onlyAdmin public {
         /**
             inputs[6*i .. (6*i+5)] order i, order1 is taker, other orders are maker  
@@ -220,7 +220,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
             data [0 .. 7] (uint256) nonce 
             data [8 ..11] (uint256) takerFee
             data [12..15] (uint256) makerFee
-            data [14..21] (uint256) joyPrice --> 0: pay ether, others: pay joy Token
+            data [16..22] (uint256) joyPrice --> 0: pay ether, others: pay joy Token
             data [23..23] (uint256) isBuy --> always 0, should be modified in contract
             data [24..63] (address) tokenAddress
          */
@@ -240,10 +240,10 @@ contract Joyso is Ownable, JoysoDataDecoder {
                 break;
             bytes32 makerOrderHash = getOrderDataHash(inputs[i], inputs[i+1], inputs[i+2], genUserSignedOrderData(inputs[i+3], isBuy, tokenId2Address[tokenId]));
             require(verify(makerOrderHash, userId2Address[decodeOrderUserId(inputs[i+3])], (uint8)(retrieveV(inputs[i+3])), (bytes32)(inputs[i+4]), (bytes32)(inputs[i+5])));
-            (tosb, tobb) = internalTrade(subArray(i, i+3, inputs), tosb, tobb, isBuy, tokenId, makerOrderHash);
+            (tosb, tobb) = internalTrade(inputs[i], inputs[i+1], inputs[i+2], inputs[i+3], tosb, tobb, isBuy, tokenId, makerOrderHash);
         }
 
-        updateTakerBalance(subArray(0, 3, inputs), tosb, tobb, isBuy, tokenId, orderHash);
+        updateTakerBalance(inputs[0], inputs[1], inputs[2], inputs[3], tosb, tobb, isBuy, tokenId, orderHash);
     }
 
     // -------------------------------------------- internal/private function
@@ -257,30 +257,30 @@ contract Joyso is Ownable, JoysoDataDecoder {
         NewUser(_address, userCount);
     }
 
-    function updateTakerBalance (uint256[] inputs, uint256 tosb, uint256 tobb, uint256 isBuy, uint256 tokenId, bytes32 orderHash) {
+    function updateTakerBalance (uint256 amountSell, uint256 amountBuy, uint256 gasFee, uint256 data, uint256 tosb, uint256 tobb, uint256 isBuy, uint256 tokenId, bytes32 orderHash) {
         uint256 etherGet;
         uint256 tokenGet;
         if (isBuy == ORDER_ISBUY) { // (to maker) buy token, sell ether --> (to taker) tosb unit is token, tobb unit is ether
             etherGet = tobb;
-            tokenGet = tosb;
+            tokenGet = amountSell.sub(tosb);
         } else {
-            etherGet = tosb;
+            etherGet = amountSell.sub(tosb);
             tokenGet = tobb;
         }
-        uint256 etherFee = calculateEtherFee(inputs, etherGet, orderHash);
-        uint256 joyFee = calculateJoyFee(inputs, etherGet, orderHash);
-        updateUserBalance(inputs, isBuy, etherGet, tokenGet, etherFee, joyFee, tokenId);
+        uint256 etherFee = calculateEtherFee(gasFee, data, etherGet, orderHash, true);
+        uint256 joyFee = calculateJoyFee(gasFee, data, etherGet, orderHash);
+        updateUserBalance(data, isBuy ^ ORDER_ISBUY, etherGet, tokenGet, etherFee, joyFee, tokenId);
         orderFills[orderHash] = orderFills[orderHash].add(tobb);
     }
 
-    function internalTrade (uint256[] inputs, uint256 _tosb, uint256 _tobb, uint256 isBuy, uint256 tokenId, bytes32 orderHash) 
+    function internalTrade (uint256 amountSell, uint256 amountBuy, uint256 gasFee, uint256 data, uint256 _tosb, uint256 _tobb, uint256 isBuy, uint256 tokenId, bytes32 orderHash) 
         internal returns (uint256 tosb, uint256 tobb) 
     {
-        uint256 etherGet = calculateEtherGet(inputs, _tosb, isBuy, orderHash);
-        uint256 tokenGet = calculateTokenGet(inputs, etherGet);
-        uint256 etherFee = calculateEtherFee(inputs, etherGet, orderHash);
-        uint256 joyFee = calculateJoyFee(inputs, etherGet, orderHash);
-        updateUserBalance( inputs, isBuy, etherGet, tokenGet, etherFee, joyFee, tokenId);
+        uint256 etherGet = calculateEtherGet(amountSell, amountBuy, _tosb, isBuy, orderHash);
+        uint256 tokenGet = calculateTokenGet(amountSell, amountBuy, etherGet);
+        uint256 etherFee = calculateEtherFee(gasFee, data, etherGet, orderHash, false);
+        uint256 joyFee = calculateJoyFee(gasFee, data, etherGet, orderHash);
+        updateUserBalance(data, isBuy, etherGet, tokenGet, etherFee, joyFee, tokenId);
         (tosb, tobb) = updateTakerOrder(isBuy, _tosb, _tobb, etherGet, tokenGet);
     }
 
@@ -294,14 +294,14 @@ contract Joyso is Ownable, JoysoDataDecoder {
         }
     }
 
-    function updateUserBalance(uint256[] inputs, uint256 isBuy, uint256 etherGet, uint256 tokenGet, uint256 etherFee, uint256 joyFee, uint256 tokenId) internal {
-        address user = userId2Address[decodeOrderUserId(inputs[3])];
+    function updateUserBalance(uint256 data, uint256 isBuy, uint256 etherGet, uint256 tokenGet, uint256 etherFee, uint256 joyFee, uint256 tokenId) internal {
+        address user = userId2Address[decodeOrderUserId(data)];
         address token = tokenId2Address[tokenId];
         if (isBuy == ORDER_ISBUY) { // buy token, sell ether
-            balances[0][user] = balances[0][user].sub(etherGet.add(etherFee));
+            balances[0][user] = balances[0][user].sub(etherGet).sub(etherFee);
             balances[token][user] = balances[token][user].add(tokenGet);
         } else {
-            balances[0][user] = balances[0][user].add(etherGet.sub(etherFee));
+            balances[0][user] = balances[0][user].add(etherGet).sub(etherFee);
             balances[token][user] = balances[token][user].sub(tokenGet);
         }
 
@@ -313,15 +313,15 @@ contract Joyso is Ownable, JoysoDataDecoder {
         }
     }
 
-    function calculateJoyFee (uint256[] inputs, uint256 etherGet, bytes32 orderHash) returns (uint256) {
-        uint256 joyPrice = decodeOrderJoyPrice(inputs[3]);
+    function calculateJoyFee (uint256 gasFee, uint256 data, uint256 etherGet, bytes32 orderHash) returns (uint256) {
+        uint256 joyPrice = decodeOrderJoyPrice(data);
         if (joyPrice != 0) {
             uint256 joyFee = 0;
             if (orderFills[orderHash] == 0) {
-                joyFee.add(inputs[2]);
+                joyFee.add(gasFee);
             }
 
-            uint256 txFee = etherGet.mul(decodeOrderMakerFee(inputs[3])).div(10000);
+            uint256 txFee = etherGet.mul(decodeOrderMakerFee(data).div(10000));
             uint256 toJoy = txFee.mul(10).div(joyPrice);
             return joyFee.add(toJoy);
         } else {
@@ -329,32 +329,39 @@ contract Joyso is Ownable, JoysoDataDecoder {
         }
     }
 
-    function calculateEtherFee (uint256[] inputs, uint256 etherGet, bytes32 orderHash) view returns (uint256) {
-        if (decodeOrderJoyPrice(inputs[3]) != 0) {
+    function calculateEtherFee (uint256 gasFee, uint256 data, uint256 etherGet, bytes32 orderHash, bool isTaker) view returns (uint256) {
+        if (decodeOrderJoyPrice(data) != 0) {
             return 0;
         } else {
             uint256 etherFee = 0;
             if (orderFills[orderHash] == 0) {
-                etherFee.add(inputs[2]);
+                etherFee = etherFee.add(gasFee);
             }
 
-            uint256 txFee = etherGet.mul(decodeOrderMakerFee(inputs[3])).div(10000);
+            uint256 txFee;
+            if(isTaker){
+                txFee =  etherGet.mul(decodeOrderTakerFee(data)).div(10000);
+            } else {
+                txFee = etherGet.mul(decodeOrderMakerFee(data)).div(10000);
+            }
+            Log(etherGet, txFee);
+            Log(etherFee, gasFee);
             return etherFee.add(txFee);
         }
     }
 
-    function calculateTokenGet (uint256[] inputs, uint256 etherGet) returns (uint256) {
-        return etherGet.mul(inputs[1]).div(inputs[0]);
+    function calculateTokenGet (uint256 amountSell, uint256 amountBuy, uint256 etherGet) returns (uint256) {
+        return etherGet.mul(amountBuy).div(amountSell);
     }
 
-    function calculateEtherGet (uint256[] inputs, uint256 _tosb, uint256 isBuy, bytes32 orderHash) view returns (uint256) {
-        uint256 tradeAmount = inputs[1].sub(orderFills[orderHash]);
+    function calculateEtherGet (uint256 amountSell, uint256 amountBuy, uint256 _tosb, uint256 isBuy, bytes32 orderHash) view returns (uint256) {
+        uint256 tradeAmount = amountBuy.sub(orderFills[orderHash]);
         if (_tosb >= tradeAmount && isBuy == ORDER_ISBUY) { // buy token, the unit of amountBuy is token, turn to ether
-            return inputs[1].sub(orderFills[orderHash]).mul(inputs[0]).div(inputs[1]);
+            return amountBuy.sub(orderFills[orderHash]).mul(amountSell).div(amountBuy);
         } else if (_tosb >= tradeAmount && isBuy == 0) {    // sell token, the unit of amountBuy is ether 
-            return inputs[1].sub(orderFills[orderHash]);
+            return amountBuy.sub(orderFills[orderHash]);
         } else if (_tosb < tradeAmount && isBuy == ORDER_ISBUY) { // buy token, the unit of amountBuy is token, turn to ether
-            return _tosb.mul(inputs[0]).div(inputs[1]);
+            return _tosb.mul(amountSell).div(amountBuy);
         } else {
             return _tosb;
         }

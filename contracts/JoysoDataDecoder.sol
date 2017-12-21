@@ -44,7 +44,7 @@ contract JoysoDataDecoder {
         /**
             data3
             0x000181bfeb 0000000000000 1 1 000000000000000000000000000 0002 00000001
-            [ 0.. 9] (uint256) nonce         --> use for random hash             
+            [ 0.. 7] (uint256) nonce         --> use for random hash             
             [23..23] (uint256) paymentMethod --> 0: ether, 1: Token, 2: joyToken
             [52..55] (uint256) tokenID
             [56..63] (address) userID
@@ -90,11 +90,4 @@ contract JoysoDataDecoder {
         data = _data | (uint256)(_address);
     }
 
-    function subArray (uint256 from, uint256 to, uint256[] array) public view returns (uint256[]) {
-        uint256[] temp;
-        for(uint256 i = from; i <= to; i++) {
-            temp.push(array[i]);
-        }
-        return temp;
-    }
 }
