@@ -30,16 +30,6 @@ contract Joyso is Ownable, JoysoDataDecoder {
     uint256 public lockPeriod = 100000;
     uint256 public userCount;
 
-    struct Order {
-        uint256 amountSell;
-        uint256 amountBuy;
-        uint256 gasFee;
-        uint256 data;
-        uint256 tokenId;
-        uint256 isBuy;
-        bytes32 orderHash;
-    }
-
     modifier onlyAdmin {
         require(msg.sender == owner || isAdmin[msg.sender]);
         _;
@@ -119,7 +109,6 @@ contract Joyso is Ownable, JoysoDataDecoder {
          return true;
     }
 
-
     // -------------------------------------------- only admin 
     function registerToken (address tokenAddress, uint256 index) onlyAdmin {
         require (index > 1);
@@ -190,9 +179,6 @@ contract Joyso is Ownable, JoysoDataDecoder {
         }
         Withdraw(token, user, inputs[0], balances[token][user]);
     }
-
-    event Log(uint256 tosb, uint256 tobb);
-    event Log(address user);
 
     function matchByAdmin (uint256[] inputs) onlyAdmin public {
         /**
@@ -294,6 +280,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         }
     }
 
+    event Logg(bool isBuy, uint256 balance, uint256 Get, uint256 Fee);
     function updateUserBalance(uint256 data, uint256 isBuy, uint256 etherGet, uint256 tokenGet, uint256 etherFee, uint256 joyFee, uint256 tokenId) internal {
         address user = userId2Address[decodeOrderUserId(data)];
         address token = tokenId2Address[tokenId];
@@ -301,7 +288,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
             balances[0][user] = balances[0][user].sub(etherGet).sub(etherFee);
             balances[token][user] = balances[token][user].add(tokenGet);
         } else {
-            balances[0][user] = balances[0][user].add(etherGet).sub(etherFee);
+            balances[0][user] = balances[0][user].add(etherGet.sub(etherFee));
             balances[token][user] = balances[token][user].sub(tokenGet);
         }
 
@@ -344,14 +331,12 @@ contract Joyso is Ownable, JoysoDataDecoder {
             } else {
                 txFee = etherGet.mul(decodeOrderMakerFee(data)).div(10000);
             }
-            Log(etherGet, txFee);
-            Log(etherFee, gasFee);
             return etherFee.add(txFee);
         }
     }
 
     function calculateTokenGet (uint256 amountSell, uint256 amountBuy, uint256 etherGet) returns (uint256) {
-        return etherGet.mul(amountBuy).div(amountSell);
+        return etherGet.mul(amountSell).div(amountBuy);
     }
 
     function calculateEtherGet (uint256 amountSell, uint256 amountBuy, uint256 _tosb, uint256 isBuy, bytes32 orderHash) view returns (uint256) {
@@ -367,3 +352,4 @@ contract Joyso is Ownable, JoysoDataDecoder {
         }
     }
 }
+

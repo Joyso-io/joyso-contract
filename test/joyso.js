@@ -14,7 +14,7 @@ contract('Joyso', function (accounts) {
     var user1 = accounts[1]
     var user2 = accounts[2]
     var user3 = accounts[3]
-    var debug = 1
+    var debug = 0
     var joysoWallet = accounts[4]
     var ONE = web3.toWei(1, 'ether')
     var GASFEE = web3.toWei(0.001, 'ether')
@@ -517,5 +517,153 @@ contract('Joyso', function (accounts) {
         assert.equal(user3_ether_balance, web3.toWei(1.23975, 'ether'))
         assert.equal(user3_token_balance, web3.toWei(0.75, 'ether'))
         assert.equal(joysoWallet_balance, web3.toWei(0.0315, 'ether'))
+    })
+
+    it("搓合, case3, 詳見 google doc", async function () {
+        Log("*************************** Start test5 *******************************")
+        var joyso = await Joyso.new(joysoWallet, {from: admin})
+        await joyso.depositEther({from: user1, value: ONE})
+        await joyso.depositEther({from: user2, value: ONE})
+        var token = await TestToken.new(joysoWallet, {from: admin})
+        Log("token address: " + token.address)
+        await token.transfer(user1, ONE, {from: admin})
+        await token.transfer(user2, ONE, {from: admin})
+        await joyso.registerToken(token.address, 0x57, {from: admin})
+        await token.approve(joyso.address, ONE, {from: user1})
+        await token.approve(joyso.address, ONE, {from: user2})
+        await joyso.depositToken(token.address, ONE, {from: user1})
+        await joyso.depositToken(token.address, ONE, {from: user2})
+        var user1_ether_balance = await joyso.getBalance.call(ETHER, user1)
+        var user1_token_balance = await joyso.getBalance.call(token.address, user1)
+        var user2_ether_balance = await joyso.getBalance.call(ETHER, user2)
+        var user2_token_balance = await joyso.getBalance.call(token.address, user2)
+        assert.equal(user1_ether_balance, ONE)
+        assert.equal(user1_token_balance, ONE)
+        assert.equal(user2_ether_balance, ONE)
+        assert.equal(user2_token_balance, ONE)
+
+        // prepare order 1 
+        var order1_amountSell = web3.toWei(0.000112 , 'ether')
+        var order1_amountBuy = web3.toWei(0.000000000007, 'ether')
+        var order1_gasFee = web3.toWei(0.000001, 'ether')
+        var order1_nonce = 0x5a41e89b
+        var order1_takerFee = 0x0014
+        var order1_makerFee = 0x000a
+        var order1_JoyPrice = 0
+        var order1_isBuy = 1 // order1 is buying token, should be 0 when input to the contract 
+        var order1_tokenSellId = await joyso.address2Id.call(ETHER)
+        var order1_tokenBuyId = await joyso.address2Id.call(token.address)
+        var order1_userId = await joyso.address2Id.call(user1)
+        var order1_inputDataWithoutV = genOrderInputDataWithoutV(order1_nonce, order1_takerFee, order1_makerFee, order1_JoyPrice, 
+                                            order1_tokenSellId, order1_tokenBuyId, order1_userId)
+        var order1_letUserSignData = await joyso.genUserSignedOrderData.call(order1_inputDataWithoutV, order1_isBuy, token.address)
+        var order1_UserShouldSignIt= await joyso.getOrderDataHash.call(order1_amountSell, order1_amountBuy, order1_gasFee, order1_letUserSignData)
+        Log("order1_letUserSignData: " + order1_letUserSignData.toString(16))
+        Log("order1_UserShouldSignIt: " + order1_UserShouldSignIt)
+        var order1_sig = web3.eth.sign(user1, order1_UserShouldSignIt).slice(2)
+        var order1_r = `0x${order1_sig.slice(0, 64)}`
+        var order1_s = `0x${order1_sig.slice(64, 128)}`
+        var order1_v = web3.toDecimal(order1_sig.slice(128, 130)) + 27
+        var order1_inputData = genOrderInputData(order1_inputDataWithoutV, order1_v)
+
+        // prepare order 2 
+        var order2_amountSell = web3.toWei(0.000000000001, 'ether')
+        var order2_amountBuy = web3.toWei(0.00001, 'ether')
+        var order2_gasFee = web3.toWei(0.000001, 'ether')
+        var order2_nonce = 0x5a41e7ba
+        var order2_takerFee = 0x0014
+        var order2_makerFee = 0x000a
+        var order2_JoyPrice = 0
+        var order2_isBuy = 0 // order2 is selling token, should be 0 when input to the contract 
+        var order2_tokenSellId = await joyso.address2Id.call(token.address)
+        var order2_tokenBuyId = await joyso.address2Id.call(ETHER)
+        var order2_userId = await joyso.address2Id.call(user2)
+        var order2_inputDataWithoutV = genOrderInputDataWithoutV(order2_nonce, order2_takerFee, order2_makerFee, order2_JoyPrice, 
+                                            order2_tokenSellId, order2_tokenBuyId, order2_userId)
+        var order2_letUserSignData = await joyso.genUserSignedOrderData.call(order2_inputDataWithoutV, order2_isBuy, token.address)
+        var order2_UserShouldSignIt= await joyso.getOrderDataHash.call(order2_amountSell, order2_amountBuy, order2_gasFee, order2_letUserSignData)
+        Log("order2_letUserSignData: " + order2_letUserSignData.toString(16))
+        Log("order2_UserShouldSignIt: " + order2_UserShouldSignIt)
+        var order2_sig = web3.eth.sign(user2, order2_UserShouldSignIt).slice(2)
+        var order2_r = `0x${order2_sig.slice(0, 64)}`
+        var order2_s = `0x${order2_sig.slice(64, 128)}`
+        var order2_v = web3.toDecimal(order2_sig.slice(128, 130)) + 27
+        var order2_inputData = genOrderInputData(order2_inputDataWithoutV, order2_v)
+
+        // prepare order 3 
+        var order3_amountSell = web3.toWei(0.000000000005, 'ether')
+        var order3_amountBuy = web3.toWei(0.000075, 'ether')
+        var order3_gasFee = web3.toWei(0.000001, 'ether')
+        var order3_nonce = 0x5a41e7e0
+        var order3_takerFee = 0x0014
+        var order3_makerFee = 0x000a
+        var order3_JoyPrice = 0
+        var order3_isBuy = 0 // order2 is selling token, should be 0 when input to the contract 
+        var order3_tokenSellId = await joyso.address2Id.call(token.address)
+        var order3_tokenBuyId = await joyso.address2Id.call(ETHER)
+        var order3_userId = await joyso.address2Id.call(user2)
+        var order3_inputDataWithoutV = genOrderInputDataWithoutV(order3_nonce, order3_takerFee, order3_makerFee, order3_JoyPrice, 
+                                            order3_tokenSellId, order3_tokenBuyId, order3_userId)
+        var order3_letUserSignData = await joyso.genUserSignedOrderData.call(order3_inputDataWithoutV, order3_isBuy, token.address)
+        var order3_UserShouldSignIt= await joyso.getOrderDataHash.call(order3_amountSell, order3_amountBuy, order3_gasFee, order3_letUserSignData)
+        Log("order3_letUserSignData: " + order3_letUserSignData.toString(16))
+        Log("order3_UserShouldSignIt: " + order3_UserShouldSignIt)
+        var order3_sig = web3.eth.sign(user2, order3_UserShouldSignIt).slice(2)
+        var order3_r = `0x${order3_sig.slice(0, 64)}`
+        var order3_s = `0x${order3_sig.slice(64, 128)}`
+        var order3_v = web3.toDecimal(order3_sig.slice(128, 130)) + 27
+        var order3_inputData = genOrderInputData(order3_inputDataWithoutV, order3_v)
+
+        // prepare matchByAdmin inputs
+        var inputs = []
+        inputs.push(order1_amountSell)
+        inputs.push(order1_amountBuy)
+        inputs.push(order1_gasFee)
+        inputs.push(order1_inputData)
+        inputs.push(order1_r)
+        inputs.push(order1_s)
+        inputs.push(order2_amountSell)
+        inputs.push(order2_amountBuy)
+        inputs.push(order2_gasFee)
+        inputs.push(order2_inputData)
+        inputs.push(order2_r)
+        inputs.push(order2_s)
+        inputs.push(order3_amountSell)
+        inputs.push(order3_amountBuy)
+        inputs.push(order3_gasFee)
+        inputs.push(order3_inputData)
+        inputs.push(order3_r)
+        inputs.push(order3_s)
+
+        Log("pre balance: ")
+        user1_ether_balance = await joyso.getBalance.call(ETHER, user1)
+        user1_token_balance = await joyso.getBalance.call(token.address, user1)
+        user2_ether_balance = await joyso.getBalance.call(ETHER, user2)
+        user2_token_balance = await joyso.getBalance.call(token.address, user2)
+        var joysoWallet_balance = await joyso.getBalance.call(ETHER, joysoWallet)
+        Log("user1_ether_balance: " + user1_ether_balance)
+        Log("user1_token_balance: " + user1_token_balance)
+        Log("user2_ether_balance: " + user2_ether_balance)
+        Log("user2_token_balance: " + user2_token_balance)
+        Log("joysoWallet ether: " +  joysoWallet_balance)
+
+        await joyso.matchByAdmin(inputs, {from: admin})
+
+        Log("after balance: ")
+        user1_ether_balance = await joyso.getBalance.call(ETHER, user1)
+        user1_token_balance = await joyso.getBalance.call(token.address, user1)
+        user2_ether_balance = await joyso.getBalance.call(ETHER, user2)
+        user2_token_balance = await joyso.getBalance.call(token.address, user2)
+        joysoWallet_balance = await joyso.getBalance.call(ETHER, joysoWallet)
+        Log("user1_ether_balance: " + user1_ether_balance)
+        Log("user1_token_balance: " + user1_token_balance)
+        Log("user2_ether_balance: " + user2_ether_balance)
+        Log("user2_token_balance: " + user2_token_balance)
+        Log("joysoWallet ether: " +  joysoWallet_balance)
+        assert.equal(user1_ether_balance, web3.toWei(0.99991383, 'ether'), "user1_ether_balance")
+        assert.equal(user1_token_balance, web3.toWei(1.000000000006, 'ether'), "user1 token balance")
+        assert.equal(user2_ether_balance, web3.toWei(1.000082915, 'ether'), "user2 ether balance")
+        assert.equal(user2_token_balance, web3.toWei(0.999999999994, 'ether'), "user2 token balance")
+        assert.equal(joysoWallet_balance, web3.toWei(0.000003255, 'ether'), "joysoWallet ether balance")
     })
 })
