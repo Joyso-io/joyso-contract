@@ -85,9 +85,10 @@ contract JoysoDataDecoder {
     }
 
     function genUserSignedOrderData (uint256 _data, uint256 _isBuy, address _address) public pure returns (uint256 data) {
-        _data = _data & 0xffffffffffffffffffffffff0000000000000000000000000000000000000000;
-        _data = _data | _isBuy;
-        data = _data | (uint256)(_address);
+        data = _data & 0xfffffffffffffffffffffff00000000000000000000000000000000000000000;
+        data = data | _isBuy;
+        data = data | (uint256)(_address);
     }
 
 }
+

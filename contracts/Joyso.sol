@@ -104,9 +104,11 @@ contract Joyso is Ownable, JoysoDataDecoder {
         return keccak256(this, amountSell, amountBuy, gasFee, data);
     }
 
-    function verify (bytes32 hash, address sender, uint8 v, bytes32 r, bytes32 s) public pure returns (bool) {
+    event Verify(bytes32 hash, address sender, uint8 v, bytes32 r, bytes32 s);
+    function verify (bytes32 hash, address sender, uint8 v, bytes32 r, bytes32 s) public returns (bool) {
+        Verify(hash, sender, v, r, s);
         //return ecrecover(hash, v, r, s) == sender;
-         return true;
+        return true;
     }
 
     // -------------------------------------------- only admin 
@@ -280,7 +282,6 @@ contract Joyso is Ownable, JoysoDataDecoder {
         }
     }
 
-    event Logg(bool isBuy, uint256 balance, uint256 Get, uint256 Fee);
     function updateUserBalance(uint256 data, uint256 isBuy, uint256 etherGet, uint256 tokenGet, uint256 etherFee, uint256 joyFee, uint256 tokenId) internal {
         address user = userId2Address[decodeOrderUserId(data)];
         address token = tokenId2Address[tokenId];
