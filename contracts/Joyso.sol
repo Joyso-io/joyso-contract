@@ -44,7 +44,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
     function Joyso (address _joysoWallet) {
         joysoWallet = _joysoWallet;
         addUser(_joysoWallet);
-        joyToken = 0x12345;
+        joyToken = 0xaCDF2627235d396A1e61298AEdd6Ff004960F8f7;
         address2Id[joyToken] = 1;
         address2Id[0] = 0; // ether address is Id 0
         tokenId2Address[0] = 0;
