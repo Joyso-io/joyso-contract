@@ -21,7 +21,6 @@ contract('Joyso', function (accounts) {
     const ETHER = "0x0000000000000000000000000000000000000000"
     const ORDER_ISBUY = 1461501637330902918203684832716283019655932542976;
 
-
     const genInputData = function (data, v, tokenID, userID) {
         Log("================= entering genInputData ==================\n")
         Log("data: " + data)
@@ -89,9 +88,9 @@ contract('Joyso', function (accounts) {
         if (v == 27) {
             var temp = dataWithoutV
         } else {
-            var temp = dataWithoutV.substring(0, 25)
+            var temp = dataWithoutV.substring(0, 26)
             temp += '1'
-            temp += dataWithoutV.substring(26, 66)
+            temp += dataWithoutV.substring(27, 66)
         }
 
         Log("result: " + temp)
@@ -106,6 +105,18 @@ contract('Joyso', function (accounts) {
             return true
         }
     }
+
+    // const generateOrder = await function (amountSell, amountBuy, gasFee, nonce, takerFee, makerFee, 
+    // joyPrice, isBuy, tokenSell, tokenBuy, user, joysoAddress) {
+    //     var joyso = await Joyso.at(joysoAddress)
+    //     var tokenSellId = await joyso.address2Id.call(tokenSell)
+    //     var tokenBuyId = await joyso.address2Id.call(tokenBuy)
+    //     var userId = await joyso.address2Id.call(user)
+    //     var inputDataWithoutV = genOrderInputDataWithoutV(nonce, takerFee, makerFee, joyPrice, 
+    //         tokenSellId, tokenBuyId, userId)
+    //     var userShouldSignIt = await joyso.getOrderDataHash.call(amountSell, amountBuy, gasFee, )
+    //     return (amountSell, amountBuy, gasFee, dataWithV, r, s)
+    // }
 
     it("withdrawbyAdmin --> 領TOKEN, 用ETHER付Fee", async function () {
         Log("*************************** Start test1 *******************************")
@@ -295,7 +306,8 @@ contract('Joyso', function (accounts) {
         var order1_userId = await joyso.address2Id.call(user1)
         var order1_inputDataWithoutV = genOrderInputDataWithoutV(order1_nonce, order1_takerFee, order1_makerFee, order1_JoyPrice, 
                                             order1_tokenSellId, order1_tokenBuyId, order1_userId)
-        var order1_letUserSignData = await joyso.genUserSignedOrderData.call(order1_inputDataWithoutV, order1_isBuy, token.address)
+        //var order1_letUserSignData = await joyso.genUserSignedOrderData.call(order1_inputDataWithoutV, order1_isBuy, token.address)
+        var order1_letUserSignData = genOrderDataInUserSigned(order1_inputDataWithoutV, order1_isBuy, token.address) 
         var order1_UserShouldSignIt= await joyso.getOrderDataHash.call(order1_amountSell, order1_amountBuy, order1_gasFee, order1_letUserSignData)
         Log("order1_letUserSignData: " + order1_letUserSignData.toString(16))
         Log("order1_UserShouldSignIt: " + order1_UserShouldSignIt)
@@ -416,7 +428,8 @@ contract('Joyso', function (accounts) {
         var order1_userId = await joyso.address2Id.call(user1)
         var order1_inputDataWithoutV = genOrderInputDataWithoutV(order1_nonce, order1_takerFee, order1_makerFee, order1_JoyPrice, 
                                             order1_tokenSellId, order1_tokenBuyId, order1_userId)
-        var order1_letUserSignData = await joyso.genUserSignedOrderData.call(order1_inputDataWithoutV, order1_isBuy, token.address)
+        //var order1_letUserSignData = await joyso.genUserSignedOrderData.call(order1_inputDataWithoutV, order1_isBuy, token.address)
+        var order1_letUserSignData = genOrderDataInUserSigned(order1_inputDataWithoutV, order1_isBuy, token.address)
         var order1_UserShouldSignIt= await joyso.getOrderDataHash.call(order1_amountSell, order1_amountBuy, order1_gasFee, order1_letUserSignData)
         Log("order1_letUserSignData: " + order1_letUserSignData.toString(16))
         Log("order1_UserShouldSignIt: " + order1_UserShouldSignIt)
@@ -454,7 +467,7 @@ contract('Joyso', function (accounts) {
         var order3_amountSell = web3.toWei(0.25, 'ether')
         var order3_amountBuy = web3.toWei(0.25, 'ether')
         var order3_gasFee = web3.toWei(0.01, 'ether')
-        var order3_nonce = 0x00000002
+        var order3_nonce = 0x00000003
         var order3_takerFee = 0x0014
         var order3_makerFee = 0x000a
         var order3_JoyPrice = 0
@@ -684,6 +697,6 @@ contract('Joyso', function (accounts) {
         assert.equal(user1_token_balance, web3.toWei(1.000000000006, 'ether'), "user1 token balance")
         assert.equal(user2_ether_balance, web3.toWei(1.000082915, 'ether'), "user2 ether balance")
         assert.equal(user2_token_balance, web3.toWei(0.999999999994, 'ether'), "user2 token balance")
-        assert.equal(joysoWallet_balance, web3.toWei(0.00000325, 'ether'), "joysoWallet ether balance")
+        assert.equal(joysoWallet_balance, web3.toWei(0.000003255, 'ether'), "joysoWallet ether balance")
     })
 })
