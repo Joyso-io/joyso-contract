@@ -105,10 +105,15 @@ contract Joyso is Ownable, JoysoDataDecoder {
     }
 
     event Verify(bytes32 hash, address sender, uint8 v, bytes32 r, bytes32 s);
+    event ECResult(address signer);
     function verify (bytes32 hash, address sender, uint8 v, bytes32 r, bytes32 s) public returns (bool) {
         Verify(hash, sender, v, r, s);
-        //return ecrecover(hash, v, r, s) == sender;
-        return true;
+        bytes memory prefix = "\x19Ethereum Signed Message:\n32";
+        bytes32 prefixedHash = keccak256(prefix, hash);
+        address signer = ecrecover(prefixedHash, v, r, s);
+        ECResult(signer);
+        return signer == sender;
+        //return true;
     }
 
     // -------------------------------------------- only admin 
@@ -179,9 +184,9 @@ contract Joyso is Ownable, JoysoDataDecoder {
         } else {
             require(Token(token).transfer(msg.sender, inputs[0]));
         }
-        Withdraw(token, user, inputs[0], balances[token][user]);
     }
 
+    event Log(uint256 genUserSignedOrderData);
     function matchByAdmin (uint256[] inputs) onlyAdmin public {
         /**
             inputs[6*i .. (6*i+5)] order i, order1 is taker, other orders are maker  
@@ -214,6 +219,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
          */
         var (tokenId, isBuy) = decodeOrderTokenIdAndIsBuy(inputs[3]);
         bytes32 orderHash = getOrderDataHash(inputs[0], inputs[1], inputs[2], genUserSignedOrderData(inputs[3], isBuy, tokenId2Address[tokenId]));
+        Log(genUserSignedOrderData(inputs[3], isBuy, tokenId2Address[tokenId]));
         // TODO: should check the nonce here
         require (orderFills[orderHash] == 0);
         require (verify(orderHash, userId2Address[decodeOrderUserId(inputs[3])], (uint8)(retrieveV(inputs[3])), (bytes32)(inputs[4]), (bytes32)(inputs[5])));
