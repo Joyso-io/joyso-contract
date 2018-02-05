@@ -279,6 +279,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         etherExecute = _etherExecute.add(etherGet);
     }
 
+    event JOYFEE(uint256 joyfee);
     function updateUserBalance (uint256 data, uint256 isBuy, uint256 etherGet, uint256 tokenGet, uint256 etherFee, uint256 joyFee, uint256 tokenId) internal {
         address user = userId2Address[decodeOrderUserId(data)];
         address token = tokenId2Address[tokenId];
@@ -290,6 +291,8 @@ contract Joyso is Ownable, JoysoDataDecoder {
             balances[token][user] = balances[token][user].sub(tokenGet);
         }
 
+        JOYFEE(joyFee);
+        JOYFEE(etherFee);
         if(joyFee != 0) {
             balances[joyToken][user] = balances[joyToken][user].sub(joyFee);
             balances[joyToken][joysoWallet] = balances[joyToken][joysoWallet].add(joyFee);
@@ -304,7 +307,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         if (joyPrice != 0) {
             uint256 joyFee = orderFills[orderHash] == 0 ? gasFee : 0;
             uint256 txFee = isTaker ? etherGet.mul(decodeOrderTakerFee(data)).div(10000) : etherGet.mul(decodeOrderMakerFee(data)).div(10000);
-            uint256 toJoy = txFee.mul(10 ** 5).div(joyPrice);
+            uint256 toJoy = txFee.div(10 ** 5).div(joyPrice);
             return joyFee.add(toJoy);
         } else { 
             return 0;
