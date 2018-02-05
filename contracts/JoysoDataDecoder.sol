@@ -56,7 +56,7 @@ contract JoysoDataDecoder {
         userID = _data & 0x00000000000000000000000000000000000000000000000000000000ffffffff;
     }
 
-    function decodeData4 (uint256 _data) public view returns (uint256 timeStamp, uint256 paymentMethod, address userAddress) {
+    function decodeData4 (uint256 _data) public pure returns (uint256 timeStamp, uint256 paymentMethod, address userAddress) {
         /**
             data4
             0x000000000000 160004a1170 1 b2f7eb1f2c37645be61d73953035360e768d81e6

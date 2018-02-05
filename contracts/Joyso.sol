@@ -1,9 +1,11 @@
 pragma solidity ^0.4.17;
 
-import "./lib/SafeMath.sol";
-import "./lib/Ownable.sol";
+//import "./lib/SafeMath.sol";
+//import "./lib/Ownable.sol";
+import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
+import 'zeppelin-solidity/contracts/math/SafeMath.sol';
 import "./JoysoDataDecoder.sol";
-import {StandardToken as Token} from "./lib/StandardToken.sol";
+import {StandardToken as Token} from "zeppelin-solidity/contracts/token/StandardToken.sol";
 
 /** @title Joyso contract
   *
@@ -41,7 +43,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
     event NewUser (address user, uint256 id);
     event Lock (address user, uint256 timeLock);
 
-    function Joyso (address _joysoWallet, address _joyToken) {
+    function Joyso (address _joysoWallet, address _joyToken) public {
         joysoWallet = _joysoWallet;
         addUser(_joysoWallet);
         joyToken = _joyToken;
@@ -104,7 +106,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         return keccak256(this, amountSell, amountBuy, gasFee, data);
     }
 
-    function verify (bytes32 hash, address sender, uint8 v, bytes32 r, bytes32 s) public returns (bool) {
+    function verify (bytes32 hash, address sender, uint8 v, bytes32 r, bytes32 s) public pure returns (bool) {
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes32 prefixedHash = keccak256(prefix, hash);
         address signer = ecrecover(prefixedHash, v, r, s);
@@ -112,7 +114,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
     }
 
     // -------------------------------------------- only admin 
-    function registerToken (address tokenAddress, uint256 index) onlyAdmin {
+    function registerToken (address tokenAddress, uint256 index) public onlyAdmin {
         require (index > 1);
         require (address2Id[tokenAddress] == 0);
         address2Id[tokenAddress] = index;
@@ -175,9 +177,9 @@ contract Joyso is Ownable, JoysoDataDecoder {
         usedHash[hash] = true;
 
         if (token == 0) {
-            msg.sender.transfer(inputs[0]);
+            user.transfer(inputs[0]);
         } else {
-            require(Token(token).transfer(msg.sender, inputs[0]));
+            require(Token(token).transfer(user, inputs[0]));
         }
     }
 
@@ -224,17 +226,16 @@ contract Joyso is Ownable, JoysoDataDecoder {
         isBuy = isBuy ^ ORDER_ISBUY;
         for (uint256 i = 6; i < inputs.length; i+=6) {
             // maker price should lower than taker price
-            require(inputs[1].mul(inputs[i+1]) <= inputs[0].mul(inputs[i]));            
-            if (tokenExecute <= 0) 
-                break;
+            require (inputs[1].mul(inputs[i+1]) <= inputs[0].mul(inputs[i]));     
+            require (tokenExecute > 0);
             bytes32 makerOrderHash = getOrderDataHash(inputs[i], inputs[i+1], inputs[i+2], genUserSignedOrderData(inputs[i+3], isBuy, tokenId2Address[tokenId]));
-            require(verify(makerOrderHash, userId2Address[decodeOrderUserId(inputs[i+3])], (uint8)(retrieveV(inputs[i+3])), (bytes32)(inputs[i+4]), (bytes32)(inputs[i+5])));
+            require (verify(makerOrderHash, userId2Address[decodeOrderUserId(inputs[i+3])], (uint8)(retrieveV(inputs[i+3])), (bytes32)(inputs[i+4]), (bytes32)(inputs[i+5])));
             (tokenExecute, etherExecute) = internalTrade(inputs[i], inputs[i+1], inputs[i+2], inputs[i+3], tokenExecute, etherExecute, isBuy, tokenId, makerOrderHash);
         }
 
         isBuy = isBuy ^ ORDER_ISBUY;
         tokenExecute = isBuy == ORDER_ISBUY ? inputs[1].sub(tokenExecute) : inputs[0].sub(tokenExecute);
-        updateTakerBalance(inputs[0], inputs[1], inputs[2], inputs[3], tokenExecute, etherExecute, isBuy, tokenId, orderHash);
+        updateTakerBalance(inputs[2], inputs[3], tokenExecute, etherExecute, isBuy, tokenId, orderHash);
     }
 
     // -------------------------------------------- internal/private function
@@ -248,7 +249,9 @@ contract Joyso is Ownable, JoysoDataDecoder {
         NewUser(_address, userCount);
     }
 
-    function updateTakerBalance (uint256 amountSell, uint256 amountBuy, uint256 gasFee, uint256 data, uint256 tokenExecute, uint256 etherExecute, uint256 isBuy, uint256 tokenId, bytes32 orderHash) {
+    function updateTakerBalance (uint256 gasFee, uint256 data, uint256 tokenExecute, uint256 etherExecute, uint256 isBuy, uint256 tokenId, bytes32 orderHash) 
+        internal
+    {
         uint256 etherFee = calculateEtherFee(gasFee, data, etherExecute, orderHash, true);
         uint256 joyFee = calculateJoyFee(gasFee, data, etherExecute, orderHash, true);
         updateUserBalance(data, isBuy, etherExecute, tokenExecute, etherFee, joyFee, tokenId);
@@ -265,16 +268,18 @@ contract Joyso is Ownable, JoysoDataDecoder {
         uint256 joyFee = calculateJoyFee(gasFee, data, etherGet, orderHash, false);
         updateUserBalance(data, isBuy, etherGet, tokenGet, etherFee, joyFee, tokenId);
         orderFills[orderHash] = orderFills[orderHash].add(tokenGet);
-        (tokenExecute, etherExecute) = updateTakerOrder(isBuy, _tokenExecute, _etherExecute, etherGet, tokenGet);
+        (tokenExecute, etherExecute) = updateTakerOrder(_tokenExecute, _etherExecute, etherGet, tokenGet);
         TradeScuess(userId2Address[decodeOrderUserId(data)], etherGet, tokenGet, isBuy, etherFee, joyFee);
     }
 
-    function updateTakerOrder(uint256 isBuy, uint256 _tokenExecute, uint256 _etherExecute, uint256 etherGet, uint256 tokenGet) returns (uint256 tokenExecute, uint256 etherExecute) {
+    function updateTakerOrder (uint256 _tokenExecute, uint256 _etherExecute, uint256 etherGet, uint256 tokenGet) 
+        internal pure returns (uint256 tokenExecute, uint256 etherExecute) 
+    {
         tokenExecute = _tokenExecute.sub(tokenGet);
         etherExecute = _etherExecute.add(etherGet);
     }
 
-    function updateUserBalance(uint256 data, uint256 isBuy, uint256 etherGet, uint256 tokenGet, uint256 etherFee, uint256 joyFee, uint256 tokenId) internal {
+    function updateUserBalance (uint256 data, uint256 isBuy, uint256 etherGet, uint256 tokenGet, uint256 etherFee, uint256 joyFee, uint256 tokenId) internal {
         address user = userId2Address[decodeOrderUserId(data)];
         address token = tokenId2Address[tokenId];
         if (isBuy == ORDER_ISBUY) { // buy token, sell ether
@@ -293,42 +298,37 @@ contract Joyso is Ownable, JoysoDataDecoder {
         }
     }
 
-    function calculateJoyFee (uint256 gasFee, uint256 data, uint256 etherGet, bytes32 orderHash, bool isTaker) returns (uint256) {
+    function calculateJoyFee (uint256 gasFee, uint256 data, uint256 etherGet, bytes32 orderHash, bool isTaker) 
+        public view returns (uint256) {
         uint256 joyPrice = decodeOrderJoyPrice(data);
         if (joyPrice != 0) {
-            uint256 joyFee = orderFills[orderHash] == 0 ? joyFee.add(gasFee) : 0;
+            uint256 joyFee = orderFills[orderHash] == 0 ? gasFee : 0;
             uint256 txFee = isTaker ? etherGet.mul(decodeOrderTakerFee(data)).div(10000) : etherGet.mul(decodeOrderMakerFee(data)).div(10000);
-            uint256 toJoy = txFee.mul(10).div(joyPrice);
+            uint256 toJoy = txFee.mul(10 ** 5).div(joyPrice);
             return joyFee.add(toJoy);
-        } else {
+        } else { 
             return 0;
         }
     }
 
-    function calculateEtherFee (uint256 gasFee, uint256 data, uint256 etherGet, bytes32 orderHash, bool isTaker) view returns (uint256) {
+    function calculateEtherFee (uint256 gasFee, uint256 data, uint256 etherGet, bytes32 orderHash, bool isTaker) public view returns (uint256) {
         if (decodeOrderJoyPrice(data) != 0) {
             return 0;
         } else {
-            uint256 etherFee = orderFills[orderHash] == 0 ? etherFee.add(gasFee) : 0;
+            uint256 etherFee = orderFills[orderHash] == 0 ? gasFee : 0;
             uint256 txFee = isTaker ? etherGet.mul(decodeOrderTakerFee(data)).div(10000) : etherGet.mul(decodeOrderMakerFee(data)).div(10000);
             return etherFee.add(txFee);
         }
     }
 
-    function calculateEtherGet (uint256 amountSell, uint256 amountBuy, uint256 isBuy, uint256 tokenGet) returns (uint256) {
-        if (isBuy == ORDER_ISBUY) {
-            return tokenGet.mul(amountSell).div(amountBuy);
-        }
-        return tokenGet.mul(amountBuy).div(amountSell);
+    function calculateEtherGet (uint256 amountSell, uint256 amountBuy, uint256 isBuy, uint256 tokenGet) public pure returns (uint256) {
+        return isBuy == ORDER_ISBUY ? tokenGet.mul(amountSell).div(amountBuy): tokenGet.mul(amountBuy).div(amountSell) ;
     }
 
-    function calculateTokenGet (uint256 amountSell, uint256 amountBuy, uint256 _tokenExecute, uint256 isBuy, bytes32 orderHash) view returns (uint256) {
+    function calculateTokenGet (uint256 amountSell, uint256 amountBuy, uint256 _tokenExecute, uint256 isBuy, bytes32 orderHash) public view returns (uint256) {
         uint256 tradeTokenAmount = isBuy == ORDER_ISBUY ? amountBuy : amountSell;
         tradeTokenAmount = tradeTokenAmount.sub(orderFills[orderHash]);
-        if (tradeTokenAmount >= _tokenExecute){
-            return _tokenExecute;
-        }
-        return tradeTokenAmount;
+        return tradeTokenAmount >= _tokenExecute ? _tokenExecute : tradeTokenAmount;
     }
 }
 
