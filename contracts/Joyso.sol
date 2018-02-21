@@ -1,15 +1,10 @@
 pragma solidity ^0.4.17;
 
-//import "./lib/SafeMath.sol";
-//import "./lib/Ownable.sol";
-import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
-import 'zeppelin-solidity/contracts/math/SafeMath.sol';
+import "./libs/SafeMath.sol";
+import "./libs/Ownable.sol";
 import "./JoysoDataDecoder.sol";
-import {StandardToken as Token} from "zeppelin-solidity/contracts/token/StandardToken.sol";
+import {StandardToken as Token} from "./libs/StandardToken.sol";
 
-/** @title Joyso contract
-  *
-  */
 contract Joyso is Ownable, JoysoDataDecoder {
     using SafeMath for uint256;
 
@@ -72,7 +67,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
     }
 
     function withdraw (address token, uint256 amount) public {
-        require(block.number > userLock[msg.sender] && userLock[msg.sender] != 0);
+        require(getBlock() > userLock[msg.sender] && userLock[msg.sender] != 0);
         require(balances[token][msg.sender] >= amount);
         balances[token][msg.sender] = balances[token][msg.sender].sub(amount);
         if(token == 0) {
@@ -84,16 +79,20 @@ contract Joyso is Ownable, JoysoDataDecoder {
     }
 
     function lockMe () public {
-        userLock[msg.sender] = block.number.add(lockPeriod);
+        userLock[msg.sender] = getBlock().add(lockPeriod);
         Lock (msg.sender, userLock[msg.sender]);
     }
 
-    function unlockme () public {
+    function unlockMe () public {
         userLock[msg.sender] = 0;
         Lock (msg.sender, userLock[msg.sender]);
     }
 
     // -------------------------------------------- helper functions
+    function getBlock () public view returns (uint256) {
+        return block.number;
+    }
+
     function getBalance (address token, address account) public view returns (uint256) {
         return balances[token][account];
     }
@@ -213,7 +212,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
             data [16..22] (uint256) joyPrice --> 0: pay ether, others: pay joy Token
             data [23..23] (uint256) isBuy --> always 0, should be modified in contract
             data [24..63] (address) tokenAddress
-         */
+        */
         var (tokenId, isBuy) = decodeOrderTokenIdAndIsBuy(inputs[3]);
         bytes32 orderHash = getOrderDataHash(inputs[0], inputs[1], inputs[2], genUserSignedOrderData(inputs[3], isBuy, tokenId2Address[tokenId]));
         // TODO: should check the nonce here
@@ -279,7 +278,6 @@ contract Joyso is Ownable, JoysoDataDecoder {
         etherExecute = _etherExecute.add(etherGet);
     }
 
-    event JOYFEE(uint256 joyfee);
     function updateUserBalance (uint256 data, uint256 isBuy, uint256 etherGet, uint256 tokenGet, uint256 etherFee, uint256 joyFee, uint256 tokenId) internal {
         address user = userId2Address[decodeOrderUserId(data)];
         address token = tokenId2Address[tokenId];
@@ -291,8 +289,6 @@ contract Joyso is Ownable, JoysoDataDecoder {
             balances[token][user] = balances[token][user].sub(tokenGet);
         }
 
-        JOYFEE(joyFee);
-        JOYFEE(etherFee);
         if(joyFee != 0) {
             balances[joyToken][user] = balances[joyToken][user].sub(joyFee);
             balances[joyToken][joysoWallet] = balances[joyToken][joysoWallet].add(joyFee);
@@ -306,7 +302,13 @@ contract Joyso is Ownable, JoysoDataDecoder {
         uint256 joyPrice = decodeOrderJoyPrice(data);
         if (joyPrice != 0) {
             uint256 joyFee = orderFills[orderHash] == 0 ? gasFee : 0;
-            uint256 txFee = isTaker ? etherGet.mul(decodeOrderTakerFee(data)).div(10000) : etherGet.mul(decodeOrderMakerFee(data)).div(10000);
+            uint256 txFee;
+            if (isTaker) {
+                txFee = etherGet.mul(decodeOrderTakerFee(data)).div(10000);
+            } else {
+                txFee = etherGet.mul(decodeOrderMakerFee(data)).div(10000);
+            }
+            //uint256 txFee = isTaker ? etherGet.mul(decodeOrderTakerFee(data)).div(10000) : etherGet.mul(decodeOrderMakerFee(data)).div(10000);
             uint256 toJoy = txFee.div(10 ** 5).div(joyPrice);
             return joyFee.add(toJoy);
         } else { 
@@ -319,7 +321,13 @@ contract Joyso is Ownable, JoysoDataDecoder {
             return 0;
         } else {
             uint256 etherFee = orderFills[orderHash] == 0 ? gasFee : 0;
-            uint256 txFee = isTaker ? etherGet.mul(decodeOrderTakerFee(data)).div(10000) : etherGet.mul(decodeOrderMakerFee(data)).div(10000);
+            uint256 txFee;
+            if (isTaker) {
+                txFee = etherGet.mul(decodeOrderTakerFee(data)).div(10000);
+            } else {
+                txFee = etherGet.mul(decodeOrderMakerFee(data)).div(10000);
+            }
+            //uint256 txFee = isTaker ? etherGet.mul(decodeOrderTakerFee(data)).div(10000) : etherGet.mul(decodeOrderMakerFee(data)).div(10000);
             return etherFee.add(txFee);
         }
     }

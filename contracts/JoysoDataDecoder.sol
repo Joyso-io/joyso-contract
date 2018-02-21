@@ -56,20 +56,6 @@ contract JoysoDataDecoder {
         userID = _data & 0x00000000000000000000000000000000000000000000000000000000ffffffff;
     }
 
-    function decodeData4 (uint256 _data) public pure returns (uint256 timeStamp, uint256 paymentMethod, address userAddress) {
-        /**
-            data4
-            0x000000000000 160004a1170 1 b2f7eb1f2c37645be61d73953035360e768d81e6
-            [12..22] (uint256) timeStamp
-            [23..23] (uint256) paymentMethod
-            [24..63] (address) userAddress
-            */
-        // Assume the _data is come after retriveV, which already eliminated the first two bytes.  
-        timeStamp = _data / 0x00000000000000000000000fffffffffffffffffffffffffffffffffffffffff;
-        paymentMethod = _data & 0x00000000000000000000000f0000000000000000000000000000000000000000;
-        userAddress = (address)(_data & 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff);
-    }
-
     function retrieveV (uint256 _data) public pure returns (uint256 v) {
         // [24..24] v 0:27 1:28
         if (_data & 0x000000000000000000000000f000000000000000000000000000000000000000 == 0) {
