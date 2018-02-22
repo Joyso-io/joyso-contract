@@ -3,7 +3,7 @@ pragma solidity ^0.4.17;
 import "./libs/SafeMath.sol";
 import "./libs/Ownable.sol";
 import "./JoysoDataDecoder.sol";
-import {StandardToken as Token} from "./libs/StandardToken.sol";
+import {ERC20 as Token} from "./libs/ERC20.sol";
 
 contract Joyso is Ownable, JoysoDataDecoder {
     using SafeMath for uint256;
@@ -234,7 +234,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
 
         isBuy = isBuy ^ ORDER_ISBUY;
         tokenExecute = isBuy == ORDER_ISBUY ? inputs[1].sub(tokenExecute) : inputs[0].sub(tokenExecute);
-        updateTakerBalance(inputs[2], inputs[3], tokenExecute, etherExecute, isBuy, tokenId, orderHash);
+        processTakerOrder(inputs[2], inputs[3], tokenExecute, etherExecute, isBuy, tokenId, orderHash);
     }
 
     // -------------------------------------------- internal/private function
@@ -248,7 +248,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         NewUser(_address, userCount);
     }
 
-    function updateTakerBalance (uint256 gasFee, uint256 data, uint256 tokenExecute, uint256 etherExecute, uint256 isBuy, uint256 tokenId, bytes32 orderHash) 
+    function processTakerOrder (uint256 gasFee, uint256 data, uint256 tokenExecute, uint256 etherExecute, uint256 isBuy, uint256 tokenId, bytes32 orderHash) 
         internal
     {
         uint256 etherFee = calculateEtherFee(gasFee, data, etherExecute, orderHash, true);
@@ -267,11 +267,11 @@ contract Joyso is Ownable, JoysoDataDecoder {
         uint256 joyFee = calculateJoyFee(gasFee, data, etherGet, orderHash, false);
         updateUserBalance(data, isBuy, etherGet, tokenGet, etherFee, joyFee, tokenId);
         orderFills[orderHash] = orderFills[orderHash].add(tokenGet);
-        (tokenExecute, etherExecute) = updateTakerOrder(_tokenExecute, _etherExecute, etherGet, tokenGet);
+        (tokenExecute, etherExecute) = updateTradeAmount(_tokenExecute, _etherExecute, etherGet, tokenGet);
         TradeScuess(userId2Address[decodeOrderUserId(data)], etherGet, tokenGet, isBuy, etherFee, joyFee);
     }
 
-    function updateTakerOrder (uint256 _tokenExecute, uint256 _etherExecute, uint256 etherGet, uint256 tokenGet) 
+    function updateTradeAmount (uint256 _tokenExecute, uint256 _etherExecute, uint256 etherGet, uint256 tokenGet) 
         internal pure returns (uint256 tokenExecute, uint256 etherExecute) 
     {
         tokenExecute = _tokenExecute.sub(tokenGet);
