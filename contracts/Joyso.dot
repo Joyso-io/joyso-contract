@@ -1,0 +1,33 @@
+strict digraph {
+  Joyso
+  addUser [color=gray]
+  depositToken
+  depositEther
+  withdraw
+  lockMe
+  unlockMe
+  registerToken
+  withdrawByAdmin
+  matchByAdmin
+  processTakerOrder [color=gray]
+  updateUserBalance [color=gray]
+  internalTrade [color=gray]
+  updateTradeAmount [color=gray]
+  Joyso -> addUser
+  depositToken -> addUser
+  depositToken -> Deposit
+  depositEther -> addUser
+  depositEther -> Deposit
+  withdraw -> Withdraw
+  lockMe -> Lock
+  unlockMe -> Lock
+  matchByAdmin -> internalTrade
+  matchByAdmin -> processTakerOrder
+  addUser -> NewUser
+  processTakerOrder -> updateUserBalance
+  processTakerOrder -> TradeSuccess
+  internalTrade -> updateUserBalance
+  internalTrade -> updateTradeAmount
+  internalTrade -> TradeSuccess
+}
+

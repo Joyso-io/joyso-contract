@@ -4,26 +4,26 @@ contract JoysoDataDecoder {
 
     uint256 constant ORDER_ISBUY = 0x0000000000000000000000010000000000000000000000000000000000000000;
 
-    function decodeOrderNonce (uint256 data) public pure returns (uint256 nonce) {
+    function decodeOrderNonce (uint256 data) internal pure returns (uint256 nonce) {
         nonce = data / 0x00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
     }
 
-    function decodeOrderTakerFee (uint256 data) public pure returns (uint256 takerFee) {
+    function decodeOrderTakerFee (uint256 data) internal pure returns (uint256 takerFee) {
         data = data & 0x00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
         takerFee = data / 0x000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff;       
     }
 
-    function decodeOrderMakerFee (uint256 data) public pure returns (uint256 makerFee) {
+    function decodeOrderMakerFee (uint256 data) internal pure returns (uint256 makerFee) {
         data = data & 0x000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff;
         makerFee = data / 0x0000000000000000ffffffffffffffffffffffffffffffffffffffffffffffff; 
     }
 
-    function decodeOrderJoyPrice (uint256 data) public pure returns (uint256 joyPrice) {
+    function decodeOrderJoyPrice (uint256 data) internal pure returns (uint256 joyPrice) {
         data = data & 0x0000000000000000ffffffffffffffffffffffffffffffffffffffffffffffff;
         joyPrice = data / 0x00000000000000000000000fffffffffffffffffffffffffffffffffffffffff;        
     }
 
-    function decodeOrderTokenIdAndIsBuy (uint256 data) public pure returns (uint256 tokenId, uint256 isBuy) {
+    function decodeOrderTokenIdAndIsBuy (uint256 data) internal pure returns (uint256 tokenId, uint256 isBuy) {
         data = data & 0x000000000000000000000000000000000000000000000000ffffffffffffffff;
         uint256 tokenSellId = data / 0x0000000000000000000000000000000000000000000000000000ffffffffffff;
         data = data & 0x0000000000000000000000000000000000000000000000000000ffffffffffff;
@@ -36,7 +36,7 @@ contract JoysoDataDecoder {
         }
     }
 
-    function decodeOrderUserId (uint256 data) public pure returns (uint256 userId) {
+    function decodeOrderUserId (uint256 data) internal pure returns (uint256 userId) {
         userId = data & 0x00000000000000000000000000000000000000000000000000000000ffffffff;
     }
 
@@ -65,12 +65,12 @@ contract JoysoDataDecoder {
         }
     }
 
-    function genUserSignedWithdrawData (uint256 _data, address _address) public pure returns (uint256 data) {
+    function genUserSignedWithdrawData (uint256 _data, address _address) internal pure returns (uint256 data) {
         _data = _data & 0xffffffffffffffffffffffff0000000000000000000000000000000000000000;
         data = _data | (uint256)(_address);
     }
 
-    function genUserSignedOrderData (uint256 _data, uint256 _isBuy, address _address) public pure returns (uint256 data) {
+    function genUserSignedOrderData (uint256 _data, uint256 _isBuy, address _address) internal pure returns (uint256 data) {
         data = _data & 0xfffffffffffffffffffffff00000000000000000000000000000000000000000;
         data = data | _isBuy;
         data = data | (uint256)(_address);

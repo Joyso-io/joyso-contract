@@ -225,8 +225,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         isBuy = isBuy ^ ORDER_ISBUY;
         for (uint256 i = 6; i < inputs.length; i+=6) {
             // maker price should lower than taker price
-            require (inputs[1].mul(inputs[i+1]) <= inputs[0].mul(inputs[i]));     
-            require (tokenExecute > 0);
+            require (tokenExecute > 0 && inputs[1].mul(inputs[i+1]) <= inputs[0].mul(inputs[i]));     
             bytes32 makerOrderHash = getOrderDataHash(inputs[i], inputs[i+1], inputs[i+2], genUserSignedOrderData(inputs[i+3], isBuy, tokenId2Address[tokenId]));
             require (verify(makerOrderHash, userId2Address[decodeOrderUserId(inputs[i+3])], (uint8)(retrieveV(inputs[i+3])), (bytes32)(inputs[i+4]), (bytes32)(inputs[i+5])));
             (tokenExecute, etherExecute) = internalTrade(inputs[i], inputs[i+1], inputs[i+2], inputs[i+3], tokenExecute, etherExecute, isBuy, tokenId, makerOrderHash);
@@ -298,7 +297,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
     }
 
     function calculateJoyFee (uint256 gasFee, uint256 data, uint256 etherGet, bytes32 orderHash, bool isTaker) 
-        public view returns (uint256) {
+        internal view returns (uint256) {
         uint256 joyPrice = decodeOrderJoyPrice(data);
         if (joyPrice != 0) {
             uint256 joyFee = orderFills[orderHash] == 0 ? gasFee : 0;
@@ -316,7 +315,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         }
     }
 
-    function calculateEtherFee (uint256 gasFee, uint256 data, uint256 etherGet, bytes32 orderHash, bool isTaker) public view returns (uint256) {
+    function calculateEtherFee (uint256 gasFee, uint256 data, uint256 etherGet, bytes32 orderHash, bool isTaker) internal view returns (uint256) {
         if (decodeOrderJoyPrice(data) != 0) {
             return 0;
         } else {
@@ -332,11 +331,11 @@ contract Joyso is Ownable, JoysoDataDecoder {
         }
     }
 
-    function calculateEtherGet (uint256 amountSell, uint256 amountBuy, uint256 isBuy, uint256 tokenGet) public pure returns (uint256) {
+    function calculateEtherGet (uint256 amountSell, uint256 amountBuy, uint256 isBuy, uint256 tokenGet) internal pure returns (uint256) {
         return isBuy == ORDER_ISBUY ? tokenGet.mul(amountSell).div(amountBuy): tokenGet.mul(amountBuy).div(amountSell) ;
     }
 
-    function calculateTokenGet (uint256 amountSell, uint256 amountBuy, uint256 _tokenExecute, uint256 isBuy, bytes32 orderHash) public view returns (uint256) {
+    function calculateTokenGet (uint256 amountSell, uint256 amountBuy, uint256 _tokenExecute, uint256 isBuy, bytes32 orderHash) internal view returns (uint256) {
         uint256 tradeTokenAmount = isBuy == ORDER_ISBUY ? amountBuy : amountSell;
         tradeTokenAmount = tradeTokenAmount.sub(orderFills[orderHash]);
         return tradeTokenAmount >= _tokenExecute ? _tokenExecute : tradeTokenAmount;
