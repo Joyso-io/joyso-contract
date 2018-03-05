@@ -5,7 +5,6 @@ contract JoysoDataDecoder {
     uint256 constant ORDER_ISBUY = 0x0000000000000000000000010000000000000000000000000000000000000000;
 
     /**
-     * @title decodeOderNonce
      * @dev rertrive the nonce in an order data
      * @dev nonce take 8 bytes 
      * @dev its used for avoild order comflict and check if the nonce is canceled. 
@@ -15,7 +14,6 @@ contract JoysoDataDecoder {
     }
 
     /**
-     * @title decodeOderTakerFee
      * @dev rertrive the taker fee in an order data 
      * @dev taker fee take 4 bytes
      * @dev from 1 to 10^4 
@@ -27,7 +25,6 @@ contract JoysoDataDecoder {
     }
 
     /**
-     * @title decodeOderMakerFee
      * @dev rertrive the maker fee in an order data 
      * @dev maker fee take 4 bytes
      * @dev from 1 to 10^4 
@@ -39,7 +36,6 @@ contract JoysoDataDecoder {
     }
 
     /**
-     * @title decodeOderJoyPrice
      * @dev rertrive the JoyPrice in an order data 
      * @dev JoyPrice take 11 digitals in hex
      * @dev from 1 to 10^8 
@@ -51,7 +47,6 @@ contract JoysoDataDecoder {
     }
 
     /**
-     * @title decodeOrderTokenIdAndIsBuy
      * @dev get tokenId and check the order is a buy order or not  
      * @dev tokenId take 4 bytes 
      * @dev isBuy is true means this order is buying token 
@@ -70,7 +65,6 @@ contract JoysoDataDecoder {
     }
 
     /**
-     * @title decodeOrderUserId
      * @dev get userId   
      * @dev userId take 4 bytes 
      * @dev from 1 to 4294967295  
@@ -80,7 +74,6 @@ contract JoysoDataDecoder {
     }
 
     /** 
-     * @title decodeWithdrawData
      * @dev is used to retrieve withdrawData 
      */
     function decodeWithdrawData (uint256 _data) internal pure returns (uint256 paymentMethod, uint256 tokenID, uint256 userID) {

@@ -182,7 +182,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         }
     }
 
-    event TradeScuess(address user, uint256 etherGet, uint256 tokenGet, uint256 isBuy, uint256 etherFee, uint256 joyFee);
+    event TradeSuccess(address user, uint256 etherGet, uint256 tokenGet, uint256 isBuy, uint256 etherFee, uint256 joyFee);
     function matchByAdmin (uint256[] inputs) onlyAdmin public {
         /**
             inputs[6*i .. (6*i+5)] order i, order1 is taker, other orders are maker  
@@ -254,7 +254,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         uint256 joyFee = calculateJoyFee(gasFee, data, etherExecute, orderHash, true);
         updateUserBalance(data, isBuy, etherExecute, tokenExecute, etherFee, joyFee, tokenId);
         orderFills[orderHash] = orderFills[orderHash].add(tokenExecute);
-        TradeScuess(userId2Address[decodeOrderUserId(data)], etherExecute, tokenExecute, isBuy, etherFee, joyFee);
+        TradeSuccess(userId2Address[decodeOrderUserId(data)], etherExecute, tokenExecute, isBuy, etherFee, joyFee);
     }
 
     function internalTrade (uint256 amountSell, uint256 amountBuy, uint256 gasFee, uint256 data, uint256 _tokenExecute, uint256 _etherExecute, uint256 isBuy, uint256 tokenId, bytes32 orderHash) 
@@ -267,7 +267,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         updateUserBalance(data, isBuy, etherGet, tokenGet, etherFee, joyFee, tokenId);
         orderFills[orderHash] = orderFills[orderHash].add(tokenGet);
         (tokenExecute, etherExecute) = updateTradeAmount(_tokenExecute, _etherExecute, etherGet, tokenGet);
-        TradeScuess(userId2Address[decodeOrderUserId(data)], etherGet, tokenGet, isBuy, etherFee, joyFee);
+        TradeSuccess(userId2Address[decodeOrderUserId(data)], etherGet, tokenGet, isBuy, etherFee, joyFee);
     }
 
     function updateTradeAmount (uint256 _tokenExecute, uint256 _etherExecute, uint256 etherGet, uint256 tokenGet) 
