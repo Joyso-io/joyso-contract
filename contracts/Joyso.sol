@@ -10,11 +10,11 @@ contract Joyso is Ownable, JoysoDataDecoder {
 
     uint256 constant PAY_BY_TOKEN = 0x0000000000000000000000020000000000000000000000000000000000000000;
     uint256 constant PAY_BY_JOY = 0x0000000000000000000000010000000000000000000000000000000000000000;
-    uint256 constant PAY_BY_ETHER = 0x0000000000000000000000000000000000000000000000000000000000000000;
     uint256 constant ORDER_ISBUY = 0x0000000000000000000000010000000000000000000000000000000000000000;
 
     mapping (address => mapping (address => uint256)) public balances;
     mapping (address => uint256) public userLock;
+    mapping (address => uint256) public userNonce;
     mapping (bytes32 => uint256) public orderFills;
     mapping (bytes32 => bool) public usedHash;
     mapping (address => bool) public isAdmin;
@@ -70,7 +70,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         require(getBlock() > userLock[msg.sender] && userLock[msg.sender] != 0);
         require(balances[token][msg.sender] >= amount);
         balances[token][msg.sender] = balances[token][msg.sender].sub(amount);
-        if(token == 0) {
+        if (token == 0) {
             msg.sender.transfer(amount);
         } else {
             require(Token(token).transfer(msg.sender, amount));
@@ -216,6 +216,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         var (tokenId, isBuy) = decodeOrderTokenIdAndIsBuy(inputs[3]);
         bytes32 orderHash = getOrderDataHash(inputs[0], inputs[1], inputs[2], genUserSignedOrderData(inputs[3], isBuy, tokenId2Address[tokenId]));
         // TODO: should check the nonce here
+        require (decodeOrderNonce(inputs[3]) > userNonce[userId2Address[decodeOrderUserId(inputs[3])]]);
         require (orderFills[orderHash] == 0);
         require (verify(orderHash, userId2Address[decodeOrderUserId(inputs[3])], (uint8)(retrieveV(inputs[3])), (bytes32)(inputs[4]), (bytes32)(inputs[5])));
 
