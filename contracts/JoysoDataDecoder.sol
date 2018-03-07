@@ -76,20 +76,25 @@ contract JoysoDataDecoder {
     /** 
      * @dev is used to retrieve withdrawData 
      */
-    function decodeWithdrawData (uint256 _data) internal pure returns (uint256 paymentMethod, uint256 tokenID, uint256 userID) {
+    function decodeWithdrawData (uint256 _data) internal pure returns (uint256 paymentMethod, uint256 tokenId, uint256 userId) {
         /**
             data3
             0x000181bfeb 0000000000000 1 1 000000000000000000000000000 0002 00000001
             [ 0.. 7] (uint256) nonce         --> use for random hash             
             [23..23] (uint256) paymentMethod --> 0: ether, 1: Token, 2: joyToken
-            [52..55] (uint256) tokenID
-            [56..63] (address) userID
+            [52..55] (uint256) tokenId
+            [56..63] (address) userId
             */
-        // Assume the _data is come after retriveV, which already eliminated the first two bytes.  
         paymentMethod = _data & 0x00000000000000000000000f0000000000000000000000000000000000000000;
         _data = _data & 0x0000000000000000000000000000000000000000000000000000ffffffffffff;
-        tokenID = _data / 0x00000000000000000000000000000000000000000000000000000000ffffffff;
-        userID = _data & 0x00000000000000000000000000000000000000000000000000000000ffffffff;
+        tokenId = _data / 0x00000000000000000000000000000000000000000000000000000000ffffffff;
+        userId = _data & 0x00000000000000000000000000000000000000000000000000000000ffffffff;
+    }
+
+    function decodeCancelData (uint256 _data) internal pure returns (uint256 nonce, uint256 paymentMethod, uint256 userId) {
+        nonce = _data / 0x00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+        paymentMethod = _data & 0x00000000000000000000000f0000000000000000000000000000000000000000;
+        userId = _data & 0x00000000000000000000000000000000000000000000000000000000ffffffff;
     }
 
     function retrieveV (uint256 _data) internal pure returns (uint256 v) {

@@ -97,6 +97,10 @@ contract Joyso is Ownable, JoysoDataDecoder {
         return balances[token][account];
     }
 
+    function getCancelDataHash(uint256 gasFee, uint256 data) public view returns (bytes32) {
+        return keccak256(this, gasFee, data);
+    }
+
     function getWithdrawDataHash (uint256 amount, uint256 gas, uint256 data) public view returns (bytes32) {
         return keccak256(this, amount, gas, data);
     }
@@ -113,18 +117,18 @@ contract Joyso is Ownable, JoysoDataDecoder {
     }
 
     // -------------------------------------------- only admin 
-    function registerToken (address tokenAddress, uint256 index) public onlyAdmin {
+    function registerToken (address tokenAddress, uint256 index) external onlyAdmin {
         require (index > 1);
         require (address2Id[tokenAddress] == 0);
         address2Id[tokenAddress] = index;
         tokenId2Address[index] = tokenAddress;
     }
 
-    function addToAdmin (address admin, bool isAdd) onlyAdmin public {
+    function addToAdmin (address admin, bool isAdd) onlyAdmin external {
         isAdmin[admin] = isAdd;
     }
 
-    function withdrawByAdmin (uint256[] inputs) onlyAdmin public {
+    function withdrawByAdmin (uint256[] inputs) onlyAdmin external {
         /**
             inputs[0] (uint256) amount;
             inputs[1] (uint256) gasFee;
@@ -183,7 +187,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
     }
 
     event TradeSuccess(address user, uint256 etherGet, uint256 tokenGet, uint256 isBuy, uint256 etherFee, uint256 joyFee);
-    function matchByAdmin (uint256[] inputs) onlyAdmin public {
+    function matchByAdmin (uint256[] inputs) onlyAdmin external {
         /**
             inputs[6*i .. (6*i+5)] order i, order1 is taker, other orders are maker  
             inputs[6i] (uint256) amountSell
@@ -215,7 +219,6 @@ contract Joyso is Ownable, JoysoDataDecoder {
         */
         var (tokenId, isBuy) = decodeOrderTokenIdAndIsBuy(inputs[3]);
         bytes32 orderHash = getOrderDataHash(inputs[0], inputs[1], inputs[2], genUserSignedOrderData(inputs[3], isBuy, tokenId2Address[tokenId]));
-        // TODO: should check the nonce here
         require (decodeOrderNonce(inputs[3]) > userNonce[userId2Address[decodeOrderUserId(inputs[3])]]);
         require (orderFills[orderHash] == 0);
         require (verify(orderHash, userId2Address[decodeOrderUserId(inputs[3])], (uint8)(retrieveV(inputs[3])), (bytes32)(inputs[4]), (bytes32)(inputs[5])));
@@ -235,6 +238,40 @@ contract Joyso is Ownable, JoysoDataDecoder {
         isBuy = isBuy ^ ORDER_ISBUY;
         tokenExecute = isBuy == ORDER_ISBUY ? inputs[1].sub(tokenExecute) : inputs[0].sub(tokenExecute);
         processTakerOrder(inputs[2], inputs[3], tokenExecute, etherExecute, isBuy, tokenId, orderHash);
+    }
+
+    // TODO: implement, check user signature and than update user nonce 
+    function cancelByAdmin(uint256[] inputs) onlyAdmin external {
+        /** 
+            inputs[0]: gasFee
+            inputs[1]: dataV
+            inputs[2]: r
+            inputs[3]: s
+            ----------------------------------------
+            dataV[ 0..7 ]: nonce
+            dataV[23..23]: paymentMethod --> 0: ether, 1: JOY
+            dataV[24..24]: (uint256) v --> should be uint8 when used
+            dataV[56..63]: (uint256) userId
+         */
+        uint256 v_256 = retrieveV(inputs[1]);
+        var (nonce, paymentMethod, userId) = decodeCancelData(inputs[1]);
+        address user = userId2Address[userId];
+        require(nonce > userNonce[user]);        
+        uint256 data = inputs[1] & 0xffffffffffffffffffffffff0000000000000000000000000000000000000000;
+        bytes32 hash = getCancelDataHash(inputs[0], data);
+        require(verify(hash, user, (uint8)(v_256), (bytes32)(inputs[2]), (bytes32)(inputs[3])));
+
+        // update balance 
+        address gasToken = 0;
+        if (paymentMethod == PAY_BY_JOY) {
+            gasToken = joyToken;
+        } 
+        require(balances[gasToken][user] >= inputs[0]);
+        balances[gasToken][user] = balances[gasToken][user].sub(inputs[0]);
+        balances[gasToken][joysoWallet] = balances[gasToken][joysoWallet].add(inputs[0]);
+
+        // update user nonce
+        userNonce[user] = nonce;
     }
 
     // -------------------------------------------- internal/private function
