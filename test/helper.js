@@ -1,6 +1,7 @@
 'use strict'
 
 const Joyso = artifacts.require("./Joyso.sol")
+const JoysoMock = artifacts.require("./JoysoMock.sol")
 const TestToken = artifacts.require("./TestToken.sol")
 const util = require("ethereumjs-util")
 const ABI = require('ethereumjs-abi')
@@ -222,6 +223,38 @@ module.exports = {
         return array
     },
 
+    setupMockEnvironment : async function () {
+        var joy = await TestToken.new('tt', 'tt', 18, {from: admin})
+        var joyso = await JoysoMock.new(joysoWallet, joy.address, {from: admin})
+        var token = await TestToken.new('tt', 'tt', 18, {from:admin})
+        await joyso.registerToken(token.address, 0x57, {from: admin})
+        await token.transfer(user1, this.ether(1), {from:admin})
+        await token.transfer(user2, this.ether(1), {from:admin})
+        await token.transfer(user3, this.ether(1), {from:admin})
+        await joy.transfer(user1, this.ether(1), {from: admin})
+        await joy.transfer(user2, this.ether(1), {from: admin})
+        await joy.transfer(user3, this.ether(1), {from: admin})
+        await token.approve(joyso.address, this.ether(1), {from: user1})
+        await token.approve(joyso.address, this.ether(1), {from: user2})
+        await token.approve(joyso.address, this.ether(1), {from: user3})
+        await joy.approve(joyso.address, this.ether(1), {from: user1})
+        await joy.approve(joyso.address, this.ether(1), {from: user2})
+        await joy.approve(joyso.address, this.ether(1), {from: user3})
+        await joyso.depositEther({from: user1, value: this.ether(1)})
+        await joyso.depositEther({from: user2, value: this.ether(1)})
+        await joyso.depositEther({from: user3, value: this.ether(1)})
+        await joyso.depositToken(token.address, this.ether(1), {from: user1})
+        await joyso.depositToken(token.address, this.ether(1), {from: user2})
+        await joyso.depositToken(token.address, this.ether(1), {from: user3})
+        await joyso.depositToken(joy.address, this.ether(1), {from: user1})
+        await joyso.depositToken(joy.address, this.ether(1), {from: user2})
+        await joyso.depositToken(joy.address, this.ether(1), {from: user3})
+        var array = []
+        array[0] = joyso.address
+        array[1] = token.address
+        array[2] = joy.address
+        return array
+    },
     setupEnvironment2 : async function () {
         var joy = await TestToken.new('tt', 'tt', 18, {from: admin})
         var joyso = await Joyso.new(joysoWallet, joy.address, {from: admin})
