@@ -220,10 +220,11 @@ contract Joyso is Ownable, JoysoDataDecoder {
         var (tokenId, isBuy) = decodeOrderTokenIdAndIsBuy(inputs[3]);
         bytes32 orderHash = getOrderDataHash(inputs[0], inputs[1], inputs[2], genUserSignedOrderData(inputs[3], isBuy, tokenId2Address[tokenId]));
         require (decodeOrderNonce(inputs[3]) > userNonce[userId2Address[decodeOrderUserId(inputs[3])]]);
-        require (orderFills[orderHash] == 0);
         require (verify(orderHash, userId2Address[decodeOrderUserId(inputs[3])], (uint8)(retrieveV(inputs[3])), (bytes32)(inputs[4]), (bytes32)(inputs[5])));
 
         uint256 tokenExecute = isBuy == ORDER_ISBUY ? inputs[1] : inputs[0]; // taker order token execute
+        require (tokenExecute > orderFills[orderHash]);
+        tokenExecute = tokenExecute.sub(orderFills[orderHash]);
         uint256 etherExecute = 0;  // taker order ether execute
         
         isBuy = isBuy ^ ORDER_ISBUY;
@@ -237,10 +238,10 @@ contract Joyso is Ownable, JoysoDataDecoder {
 
         isBuy = isBuy ^ ORDER_ISBUY;
         tokenExecute = isBuy == ORDER_ISBUY ? inputs[1].sub(tokenExecute) : inputs[0].sub(tokenExecute);
+        tokenExecute = tokenExecute.sub(orderFills[orderHash]);
         processTakerOrder(inputs[2], inputs[3], tokenExecute, etherExecute, isBuy, tokenId, orderHash);
     }
 
-    // TODO: implement, check user signature and than update user nonce 
     function cancelByAdmin(uint256[] inputs) onlyAdmin external {
         /** 
             inputs[0]: gasFee
@@ -375,6 +376,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
 
     function calculateTokenGet (uint256 amountSell, uint256 amountBuy, uint256 _tokenExecute, uint256 isBuy, bytes32 orderHash) internal view returns (uint256) {
         uint256 tradeTokenAmount = isBuy == ORDER_ISBUY ? amountBuy : amountSell;
+        require(tradeTokenAmount > orderFills[orderHash]);
         tradeTokenAmount = tradeTokenAmount.sub(orderFills[orderHash]);
         return tradeTokenAmount >= _tokenExecute ? _tokenExecute : tradeTokenAmount;
     }

@@ -436,4 +436,36 @@ contract('Joyso match', function (accounts) {
             assert(revertFound, `Expected "revert", got ${error} instead`);
         }
     })
+
+    it("split a taker order into two transactions", async function () {
+        var joyso, token
+        var temp = await helper.setupEnvironment()
+        joyso = await Joyso.at(temp[0])
+        token = await TestToken.at(temp[1])
+
+        var inputs = []
+        var order1 = await helper.generateOrder(helper.ether(0.000112), helper.ether(0.000000000007), helper.ether(0.000001), 0x5a41e89b, 20, 10, 0, ORDER_ISBUY, ETHER, token.address, user1, joyso.address)
+        Array.prototype.push.apply(inputs, order1)
+        var order2 = await helper.generateOrder(helper.ether(0.000000000001), helper.ether(0.00001), helper.ether(0.000001), 0x5a41e7ba, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address)
+        Array.prototype.push.apply(inputs, order2)
+
+        await joyso.matchByAdmin(inputs, {from: admin})
+
+        var order3 = await helper.generateOrder(helper.ether(0.000000000005), helper.ether(0.000075), helper.ether(0.000001), 0x5a41e7e0, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address)
+        inputs = []
+        Array.prototype.push.apply(inputs, order1)
+        Array.prototype.push.apply(inputs, order3)
+        await joyso.matchByAdmin(inputs, {from: admin})
+
+        var user1_ether_balance = await joyso.getBalance.call(ETHER, user1)
+        var user1_token_balance = await joyso.getBalance.call(token.address, user1)
+        var user2_ether_balance = await joyso.getBalance.call(ETHER, user2)
+        var user2_token_balance = await joyso.getBalance.call(token.address, user2)
+        var joysoWallet_balance = await joyso.getBalance.call(ETHER, joysoWallet)
+        assert.equal(user1_ether_balance, web3.toWei(0.99991383, 'ether'), "user1_ether_balance")
+        assert.equal(user1_token_balance, web3.toWei(1.000000000006, 'ether'), "user1 token balance")
+        assert.equal(user2_ether_balance, web3.toWei(1.000082915, 'ether'), "user2 ether balance")
+        assert.equal(user2_token_balance, web3.toWei(0.999999999994, 'ether'), "user2 token balance")
+        assert.equal(joysoWallet_balance, web3.toWei(0.000003255, 'ether'), "joysoWallet ether balance")        
+    })
 })
