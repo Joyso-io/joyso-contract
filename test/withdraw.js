@@ -7,7 +7,7 @@ const util = require("ethereumjs-util")
 const ABI = require('ethereumjs-abi')
 const _ = require('lodash')
 
-contract('Joyso', function (accounts) {
+contract('joyso withdraw', function (accounts) {
 
     const admin = accounts[0]
     const user1 = accounts[1]
@@ -17,7 +17,7 @@ contract('Joyso', function (accounts) {
     const ETHER = "0x0000000000000000000000000000000000000000"
     const ORDER_ISBUY = 1461501637330902918203684832716283019655932542976;
 
-    it("withdraw.js withdraw token, pay by ether", async function () {
+    it("withdraw token, pay by ether", async function () {
         var joyso, token, joy
         var temp = await helper.setupEnvironment()
         joyso = await Joyso.at(temp[0])
@@ -44,7 +44,7 @@ contract('Joyso', function (accounts) {
         assert.equal(joyso_ether_balance_after - joyso_ether_balance, helper.ether(0.02))
     })
 
-    it("withdraw.js withdraw joy, pay by ether", async function () {
+    it("withdraw joy, pay by ether", async function () {
         var joyso, token, joy
         var temp = await helper.setupEnvironment()
         joyso = await Joyso.at(temp[0])
@@ -71,7 +71,7 @@ contract('Joyso', function (accounts) {
         assert.equal(joyso_ether_balance_after - joyso_ether_balance, helper.ether(0.02))
     })
 
-    it("withdraw.js withdraw ether, pay by ether", async function () {
+    it("withdraw ether, pay by ether", async function () {
         var joyso, token, joy
         var temp = await helper.setupEnvironment()
         joyso = await Joyso.at(temp[0])
@@ -95,7 +95,7 @@ contract('Joyso', function (accounts) {
         assert.equal(joyso_ether_balance_after - joyso_ether_balance, helper.ether(0.02))
     })
 
-    it("withdraw.js withdraw token, pay by JOY", async function () {
+    it("withdraw token, pay by JOY", async function () {
         var joyso, token, joy
         var temp = await helper.setupEnvironment()
         joyso = await Joyso.at(temp[0])
@@ -122,7 +122,7 @@ contract('Joyso', function (accounts) {
         assert.equal(joyso_joy_balance_after - joyso_joy_balance, helper.ether(0.02))
     })
 
-    it("withdraw.js withdraw joy, pay by JOY", async function () {
+    it("withdraw joy, pay by JOY", async function () {
         var joyso, token, joy
         var temp = await helper.setupEnvironment()
         joyso = await Joyso.at(temp[0])
@@ -136,7 +136,7 @@ contract('Joyso', function (accounts) {
         var user1_joy_balance = await joyso.getBalance(joy.address, user1)
     })
 
-    it("withdraw.js withdraw ether, pay by JOY", async function () {
+    it("withdraw ether, pay by JOY", async function () {
         var joyso, token, joy
         var temp = await helper.setupEnvironment()
         joyso = await Joyso.at(temp[0])
@@ -154,7 +154,7 @@ contract('Joyso', function (accounts) {
         assert.equal(user1_ether_balance, helper.ether(0.5), "contract ether balance should be equal")
     })
 
-    it("withdraw.js withdraw token, pay by token", async function () {
+    it("withdraw token, pay by token", async function () {
         var joyso, token, joy
         var temp = await helper.setupEnvironment()
         joyso = await Joyso.at(temp[0])
@@ -178,7 +178,7 @@ contract('Joyso', function (accounts) {
         assert.equal(user1_account_token_balance_after - user1_account_token_balance, helper.ether(0.5))
     })
 
-    it("withdraw.js 同樣的withdraw hash不能使用兩次", async function () {
+    it("it should fail if use the same withdraw hash", async function () {
         var joyso, token, joy
         var temp = await helper.setupEnvironment()
         joyso = await Joyso.at(temp[0])
@@ -198,7 +198,7 @@ contract('Joyso', function (accounts) {
         }
     })
 
-    it("withdraw.js 簽章錯誤無法提領", async function () {
+    it("it should fail if the signature is wrong", async function () {
         var joyso, token, joy
         var temp = await helper.setupEnvironment()
         joyso = await Joyso.at(temp[0])
@@ -218,7 +218,7 @@ contract('Joyso', function (accounts) {
         }        
     })
 
-    it("withdraw.js withdraw token, pay by ether. Should fail if no token balance.", async function () {
+    it("withdraw token, pay by ether. Should fail if no token balance.", async function () {
         var joyso, token, joy
         var temp = await helper.setupEnvironment()
         joyso = await Joyso.at(temp[0])
@@ -237,7 +237,7 @@ contract('Joyso', function (accounts) {
         } 
     })
 
-    it("withdraw.js withdraw token, pay by ether. Should fail if no ether balance.", async function () {
+    it("withdraw token, pay by ether. Should fail if no ether balance.", async function () {
         var joyso, token, joy
         var temp = await helper.setupEnvironment()
         joyso = await Joyso.at(temp[0])

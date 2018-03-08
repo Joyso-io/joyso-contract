@@ -222,6 +222,33 @@ module.exports = {
         return array
     },
 
+    setupEnvironment2 : async function () {
+        var joy = await TestToken.new('tt', 'tt', 18, {from: admin})
+        var joyso = await Joyso.new(joysoWallet, joy.address, {from: admin})
+        var token = await TestToken.new('tt', 'tt', 18, {from:admin})
+        await joyso.registerToken(token.address, 0x57, {from: admin})
+        await token.transfer(user1, this.ether(1), {from:admin})
+        await token.transfer(user2, this.ether(1), {from:admin})
+        await token.transfer(user3, this.ether(1), {from:admin})
+        await joy.transfer(user1, this.ether(1), {from: admin})
+        await joy.transfer(user2, this.ether(1), {from: admin})
+        await joy.transfer(user3, this.ether(1), {from: admin})
+        await token.approve(joyso.address, this.ether(1), {from: user1})
+        await token.approve(joyso.address, this.ether(1), {from: user2})
+        await token.approve(joyso.address, this.ether(1), {from: user3})
+        await joy.approve(joyso.address, this.ether(1), {from: user1})
+        await joy.approve(joyso.address, this.ether(1), {from: user2})
+        await joy.approve(joyso.address, this.ether(1), {from: user3})
+        await joyso.depositEther({from: user2, value: 100000000000000000})
+        await joyso.depositToken(token.address, 200000000, {from: user1})
+        await joyso.depositToken(joy.address, 1000000000, {from: user1})
+        var array = []
+        array[0] = joyso.address
+        array[1] = token.address
+        array[2] = joy.address
+        return array
+    },
+
     ether : function (amount) {
         return Number(web3.toWei(amount, 'ether'))
     },
