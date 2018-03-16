@@ -9,7 +9,7 @@ const util = require("ethereumjs-util")
 const ABI = require('ethereumjs-abi')
 const _ = require('lodash')
 
-contract('Joyso match', function (accounts) {
+contract('match.js', function (accounts) {
 
     const admin = accounts[0]
     const user1 = accounts[1]
@@ -22,7 +22,7 @@ contract('Joyso match', function (accounts) {
     const ETHER = "0x0000000000000000000000000000000000000000"
     const ORDER_ISBUY = 1461501637330902918203684832716283019655932542976;
 
-    it("case1, 詳見 google doc", async function () {
+    it("case1, details in google doc", async function () {
         var joyso, token
         var temp = await helper.setupEnvironment()
         joyso = await Joyso.at(temp[0])
@@ -58,7 +58,7 @@ contract('Joyso match', function (accounts) {
         assert.equal(joyso_ether_balance2 - joyso_ether_balance, helper.ether(0.01 + 0.01 + 0.001 + 0.0005))
     })
 
-    it("case2, 詳見 google doc", async function () {
+    it("case2, details in google doc", async function () {
         var joyso, token
         var temp = await helper.setupEnvironment()
         joyso = await Joyso.at(temp[0])
@@ -100,7 +100,7 @@ contract('Joyso match', function (accounts) {
         assert.equal(joyso_ether_balance2 - joyso_ether_balance, helper.ether(0.01 + 0.001 + 0.01 + 0.00025 + 0.01 + 0.00025))
     })
 
-    it("case3, 詳見 google doc", async function () {
+    it("case3, details in google doc", async function () {
         var joyso, token
         var temp = await helper.setupEnvironment()
         joyso = await Joyso.at(temp[0])

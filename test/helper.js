@@ -55,7 +55,7 @@ module.exports = {
     generateCancel : async function (gasFee, nonce, paymentMethod, user, joysoAddress) {
         var array = []
         var joyso = await Joyso.at(joysoAddress)
-        var userId = await joyso.address2Id.call(user)
+        var userId = await joyso.userAddress2Id.call(user)
         var temp = '0x'
         temp += _.padStart(nonce.toString(16), 8, '0')
         temp += _.padStart('0', 15, '0')
@@ -138,8 +138,8 @@ module.exports = {
             dataV[56..63] (uint256) userId        
         */
 
-        var tokenId = await joyso.address2Id.call(tokenAddress)
-        var userId = await joyso.address2Id.call(userAddress)
+        var tokenId = await joyso.tokenAddress2Id.call(tokenAddress)
+        var userId = await joyso.userAddress2Id.call(userAddress)
 
         var temp2 = data.substring(0, 26)
         if (v == 27) {
@@ -164,13 +164,13 @@ module.exports = {
         joyPrice, isBuy, tokenSell, tokenBuy, user, joysoAddress) {
             var array = []
             var joyso = await Joyso.at(joysoAddress)
-            var tokenSellId = await joyso.address2Id.call(tokenSell)
-            var tokenBuyId = await joyso.address2Id.call(tokenBuy)
+            var tokenSellId = await joyso.tokenAddress2Id.call(tokenSell)
+            var tokenBuyId = await joyso.tokenAddress2Id.call(tokenBuy)
             var token = tokenSell
             if(isBuy == ORDER_ISBUY) {
                 token = tokenBuy
             }
-            var userId = await joyso.address2Id.call(user)
+            var userId = await joyso.userAddress2Id.call(user)
             var inputDataWithoutV = genOrderInputDataWithoutV(nonce, takerFee, makerFee, joyPrice, 
                 tokenSellId, tokenBuyId, userId)
             //var letUserSignData = await joyso.genUserSignedOrderData.call(inputDataWithoutV, isBuy, token)
