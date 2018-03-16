@@ -1,8 +1,8 @@
-pragma solidity ^0.4.17;
+pragma solidity 0.4.19;
 
 contract JoysoDataDecoder {
 
-    uint256 constant ORDER_ISBUY = 0x0000000000000000000000010000000000000000000000000000000000000000;
+    uint256 internal constant ORDER_ISBUY = 0x0000000000000000000000010000000000000000000000000000000000000000;
 
     /**
      * @dev rertrive the nonce in an order data
