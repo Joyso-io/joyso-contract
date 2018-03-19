@@ -10,7 +10,7 @@ contract JoysoDataDecoder {
      * @dev its used for avoild order comflict and check if the nonce is canceled. 
      */
     function decodeOrderNonce (uint256 data) internal pure returns (uint256 nonce) {
-        nonce = data / 0x00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+        nonce = data / (0x00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff + 1);
     }
 
     /**
@@ -21,7 +21,7 @@ contract JoysoDataDecoder {
      */
     function decodeOrderTakerFee (uint256 data) internal pure returns (uint256 takerFee) {
         data = data & 0x00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
-        takerFee = data / 0x000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff;       
+        takerFee = data / (0x000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff + 1);
     }
 
     /**
@@ -32,7 +32,7 @@ contract JoysoDataDecoder {
      */
     function decodeOrderMakerFee (uint256 data) internal pure returns (uint256 makerFee) {
         data = data & 0x000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff;
-        makerFee = data / 0x0000000000000000ffffffffffffffffffffffffffffffffffffffffffffffff; 
+        makerFee = data / (0x0000000000000000ffffffffffffffffffffffffffffffffffffffffffffffff + 1);
     }
 
     /**
@@ -43,7 +43,7 @@ contract JoysoDataDecoder {
      */
     function decodeOrderJoyPrice (uint256 data) internal pure returns (uint256 joyPrice) {
         data = data & 0x0000000000000000ffffffffffffffffffffffffffffffffffffffffffffffff;
-        joyPrice = data / 0x00000000000000000000000fffffffffffffffffffffffffffffffffffffffff;        
+        joyPrice = data / (0x00000000000000000000000fffffffffffffffffffffffffffffffffffffffff + 1);        
     }
 
     /**
@@ -53,9 +53,9 @@ contract JoysoDataDecoder {
      */
     function decodeOrderTokenIdAndIsBuy (uint256 data) internal pure returns (uint256 tokenId, uint256 isBuy) {
         data = data & 0x000000000000000000000000000000000000000000000000ffffffffffffffff;
-        uint256 tokenSellId = data / 0x0000000000000000000000000000000000000000000000000000ffffffffffff;
+        uint256 tokenSellId = data / (0x0000000000000000000000000000000000000000000000000000ffffffffffff + 1);
         data = data & 0x0000000000000000000000000000000000000000000000000000ffffffffffff;
-        uint256 tokenBuyId = data / 0x00000000000000000000000000000000000000000000000000000000ffffffff;
+        uint256 tokenBuyId = data / (0x00000000000000000000000000000000000000000000000000000000ffffffff + 1);
         isBuy = 0;
         tokenId = tokenSellId;
         if (tokenSellId == 0) {
@@ -87,12 +87,12 @@ contract JoysoDataDecoder {
             */
         paymentMethod = _data & 0x00000000000000000000000f0000000000000000000000000000000000000000;
         _data = _data & 0x0000000000000000000000000000000000000000000000000000ffffffffffff;
-        tokenId = _data / 0x00000000000000000000000000000000000000000000000000000000ffffffff;
+        tokenId = _data / (0x00000000000000000000000000000000000000000000000000000000ffffffff + 1);
         userId = _data & 0x00000000000000000000000000000000000000000000000000000000ffffffff;
     }
 
     function decodeCancelData (uint256 _data) internal pure returns (uint256 nonce, uint256 paymentMethod, uint256 userId) {
-        nonce = _data / 0x00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+        nonce = _data / (0x00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff + 1);
         paymentMethod = _data & 0x00000000000000000000000f0000000000000000000000000000000000000000;
         userId = _data & 0x00000000000000000000000000000000000000000000000000000000ffffffff;
     }
