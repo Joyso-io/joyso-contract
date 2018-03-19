@@ -192,7 +192,6 @@ contract Joyso is Ownable, JoysoDataDecoder {
     }
 
     event TradeSuccess(address user, uint256 etherGet, uint256 tokenGet, uint256 isBuy, uint256 etherFee, uint256 joyFee);
-
     function matchByAdmin (uint256[] inputs) onlyAdmin external {
         /**
             inputs[6*i .. (6*i+5)] order i, order1 is taker, other orders are maker  
@@ -230,6 +229,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
 
         uint256 tokenExecute = isBuy == ORDER_ISBUY ? inputs[1] : inputs[0]; // taker order token execute
         tokenExecute = tokenExecute.sub(orderFills[orderHash]);
+        require (tokenExecute != 0); // the taker order should remain something to trade 
         uint256 etherExecute = 0;  // taker order ether execute
         
         isBuy = isBuy ^ ORDER_ISBUY;
@@ -387,6 +387,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
     function calculateTokenGet (uint256 amountSell, uint256 amountBuy, uint256 _tokenExecute, uint256 isBuy, bytes32 orderHash) internal view returns (uint256) {
         uint256 tradeTokenAmount = isBuy == ORDER_ISBUY ? amountBuy : amountSell;
         tradeTokenAmount = tradeTokenAmount.sub(orderFills[orderHash]);
+        require(tradeTokenAmount > 0); // the maker order should remain something to trade
         return tradeTokenAmount >= _tokenExecute ? _tokenExecute : tradeTokenAmount;
     }
 }
