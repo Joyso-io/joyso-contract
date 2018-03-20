@@ -158,7 +158,10 @@ contract Joyso is Ownable, JoysoDataDecoder {
             data [24..63] (address) tokenAddress
          */
         uint256 v_256 = retrieveV(inputs[2]);
-        var (paymentMethod, tokenId, userId) = decodeWithdrawData(inputs[2]);
+        uint256 paymentMethod;
+        uint256 tokenId;
+        uint256 userId;
+        (paymentMethod, tokenId, userId) = decodeWithdrawData(inputs[2]);
         address token = tokenId2Address[tokenId];
         address user = userId2Address[userId];
         uint256 data = genUserSignedWithdrawData(inputs[2], token);
@@ -222,7 +225,9 @@ contract Joyso is Ownable, JoysoDataDecoder {
             data [23..23] (uint256) isBuy --> always 0, should be modified in contract
             data [24..63] (address) tokenAddress
         */
-        var (tokenId, isBuy) = decodeOrderTokenIdAndIsBuy(inputs[3]);
+        uint256 tokenId;
+        uint256 isBuy;
+        (tokenId, isBuy) = decodeOrderTokenIdAndIsBuy(inputs[3]);
         bytes32 orderHash = getOrderDataHash(inputs[0], inputs[1], inputs[2], genUserSignedOrderData(inputs[3], isBuy, tokenId2Address[tokenId]));
         require (decodeOrderNonce(inputs[3]) > userNonce[userId2Address[decodeOrderUserId(inputs[3])]]);
         require (verify(orderHash, userId2Address[decodeOrderUserId(inputs[3])], (uint8)(retrieveV(inputs[3])), (bytes32)(inputs[4]), (bytes32)(inputs[5])));
@@ -265,7 +270,10 @@ contract Joyso is Ownable, JoysoDataDecoder {
             dataV[56..63]: (uint256) userId
          */
         uint256 v_256 = retrieveV(inputs[1]);
-        var (nonce, paymentMethod, userId) = decodeCancelData(inputs[1]);
+        uint256 nonce;
+        uint256 paymentMethod;
+        uint256 userId;
+        (nonce, paymentMethod, userId) = decodeCancelData(inputs[1]);
         address user = userId2Address[userId];
         require(nonce > userNonce[user]);        
         uint256 data = inputs[1] & 0xffffffffffffffffffffffff0000000000000000000000000000000000000000;
