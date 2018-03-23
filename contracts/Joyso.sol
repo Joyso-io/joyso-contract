@@ -26,7 +26,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
 
     address public joysoWallet;
     address public joyToken;
-    uint256 public lockPeriod = 100000;
+    uint256 public lockPeriod = 10 days;
     uint256 public userCount;
     uint256 private queueLength;
 
@@ -71,7 +71,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
     }
 
     function withdraw (address token, uint256 amount) external {
-        require(getBlock() > userLock[msg.sender] && userLock[msg.sender] != 0);
+        require(getTime() > userLock[msg.sender] && userLock[msg.sender] != 0);
         balances[token][msg.sender] = balances[token][msg.sender].sub(amount);
         if (token == 0) {
             msg.sender.transfer(amount);
@@ -82,7 +82,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
     }
 
     function lockMe () external {
-        userLock[msg.sender] = getBlock().add(lockPeriod);
+        userLock[msg.sender] = getTime() + lockPeriod;
         Lock (msg.sender, userLock[msg.sender]);
     }
 
@@ -97,8 +97,8 @@ contract Joyso is Ownable, JoysoDataDecoder {
     }
 
     // -------------------------------------------- helper functions
-    function getBlock () public view returns (uint256) {
-        return block.number;
+    function getTime () public view returns (uint256) {
+        return now;
     }
 
     function getBalance (address token, address account) external view returns (uint256) {
@@ -144,7 +144,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
             inputs[3] (bytes32) r
             inputs[4] (bytes32) s
             -----------------------------------
-            dataV[0 .. 7] (uint256) nonce --> doesnt used when withdraw
+            dataV[0 .. 7] (uint256) nonce --> doesnt used in contract, its for generating different hash
             dataV[23..23] (uint256) paymentMethod --> 0: ether, 1: JOY, 2: token
             dataV[24..24] (uint256) v --> should be uint8 when used
             dataV[52..55] (uint256) tokenId
@@ -229,7 +229,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         uint256 isBuy;
         (tokenId, isBuy) = decodeOrderTokenIdAndIsBuy(inputs[3]);
         bytes32 orderHash = getOrderDataHash(inputs[0], inputs[1], inputs[2], genUserSignedOrderData(inputs[3], isBuy, tokenId2Address[tokenId]));
-        require (decodeOrderNonce(inputs[3]) > userNonce[userId2Address[decodeOrderUserId(inputs[3])]]);
+        require (decodeOrderNonce(inputs[3]) > userNonce[userId2Address[decodeOrderUserId(inputs[3])]]); // check taker order nonce 
         require (verify(orderHash, userId2Address[decodeOrderUserId(inputs[3])], (uint8)(retrieveV(inputs[3])), (bytes32)(inputs[4]), (bytes32)(inputs[5])));
 
         uint256 tokenExecute = isBuy == ORDER_ISBUY ? inputs[1] : inputs[0]; // taker order token execute
@@ -239,8 +239,8 @@ contract Joyso is Ownable, JoysoDataDecoder {
         
         isBuy = isBuy ^ ORDER_ISBUY;
         for (uint256 i = 6; i < inputs.length; i+=6) {
-            // maker price should lower than taker price
-            require (tokenExecute > 0 && inputs[1].mul(inputs[i+1]) <= inputs[0].mul(inputs[i]));
+            require (tokenExecute > 0 && inputs[1].mul(inputs[i+1]) <= inputs[0].mul(inputs[i])); //check price, maker price should lower than taker price
+            require (decodeOrderNonce(inputs[i+3]) > userNonce[userId2Address[decodeOrderUserId(inputs[i+3])]]); // check maker order nonce 
             bytes32 makerOrderHash = getOrderDataHash(inputs[i], inputs[i+1], inputs[i+2], genUserSignedOrderData(inputs[i+3], isBuy, tokenId2Address[tokenId]));
             require (verify(makerOrderHash, userId2Address[decodeOrderUserId(inputs[i+3])], (uint8)(retrieveV(inputs[i+3])), (bytes32)(inputs[i+4]), (bytes32)(inputs[i+5])));
             (tokenExecute, etherExecute) = internalTrade(inputs[i], inputs[i+1], inputs[i+2], inputs[i+3], tokenExecute, etherExecute, isBuy, tokenId, makerOrderHash);

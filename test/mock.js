@@ -26,9 +26,9 @@ contract('Joyso mock', function (accounts) {
         joy = await TestToken.at(temp[2])
 
         await joyso.lockMe({from: user1})
-        var current_block = await joyso.getBlock.call()
+        var current_time = await joyso.getTime.call()
         var lockPeriod = await joyso.lockPeriod.call()
-        await joyso.setBlock(current_block + lockPeriod + 1)
+        await joyso.setTime(current_time + lockPeriod + 1)
         var user1_ether_balance = await joyso.getBalance.call(ETHER, user1)
         var user1_ether_account_balance = await web3.eth.getBalance(user1)
         await joyso.withdraw(ETHER, helper.ether(0.5), {from: user1})
@@ -47,9 +47,9 @@ contract('Joyso mock', function (accounts) {
         joy = await TestToken.at(temp[2])
 
         await joyso.lockMe({from: user1})
-        var current_block = await joyso.getBlock.call()
+        var current_time = await joyso.getTime.call()
         var lockPeriod = await joyso.lockPeriod.call()
-        await joyso.setBlock(current_block + lockPeriod + 1)
+        await joyso.setTime(current_time + lockPeriod + 1)
         var user1_ether_account_balance = await web3.eth.getBalance(user1)
         var user1_token_balance = await joyso.getBalance.call(token.address, user1)
         var user1_token_account_balance = await token.balanceOf.call(user1)
@@ -71,11 +71,11 @@ contract('Joyso mock', function (accounts) {
         joy = await TestToken.at(temp[2])
 
         await joyso.lockMe({from: user1})
-        var current_block = await joyso.getBlock.call()
+        var current_time = await joyso.getTime.call()
         var lockPeriod = await joyso.lockPeriod.call()
-        await joyso.setBlock(current_block + lockPeriod/2 + 1)
+        await joyso.setTime(current_time + lockPeriod/2 + 1)
         await joyso.unlockMe({from: user1})
-        await joyso.setBlock(current_block + lockPeriod + 1)
+        await joyso.setTime(current_time + lockPeriod + 1)
         try {
             await joyso.withdraw(token.address, helper.ether(0.5), {from: user1})
             assert.fail('Expected revert not received');
@@ -93,9 +93,9 @@ contract('Joyso mock', function (accounts) {
         joy = await TestToken.at(temp[2])
 
         await joyso.lockMe({from: user1})
-        var current_block = await joyso.getBlock.call()
+        var current_time = await joyso.getTime.call()
         var lockPeriod = await joyso.lockPeriod.call()
-        await joyso.setBlock(current_block + lockPeriod + 1)
+        await joyso.setTime(current_time + lockPeriod + 1)
         try {
             await joyso.withdraw(ETHER, helper.ether(2), {from: user1})
             assert.fail('Expected revert not received');
@@ -113,9 +113,9 @@ contract('Joyso mock', function (accounts) {
         joy = await TestToken.at(temp[2])
 
         await joyso.lockMe({from: user1})
-        var current_block = await joyso.getBlock.call()
+        var current_time = await joyso.getTime.call()
         var lockPeriod = await joyso.lockPeriod.call()
-        await joyso.setBlock(current_block + lockPeriod + 1)
+        await joyso.setTime(current_time + lockPeriod + 1)
         try {
             await joyso.withdraw(token.address, helper.ether(2), {from: user1})
             assert.fail('Expected revert not received');
