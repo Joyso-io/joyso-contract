@@ -172,12 +172,9 @@ contract Joyso is Ownable, JoysoDataDecoder {
             data [24..63] (address) tokenAddress
          */
         uint256 v_256 = retrieveV(inputs[2]);
-        uint256 paymentMethod;
-        uint256 tokenId;
-        uint256 userId;
-        (paymentMethod, tokenId, userId) = decodeWithdrawData(inputs[2]);
-        address token = tokenId2Address[tokenId];
-        address user = userId2Address[userId];
+        uint256 paymentMethod = decodeWithdrawPaymentMethod(inputs[2]);
+        address token = tokenId2Address[decodeWithdrawTokenId(inputs[2])];
+        address user = userId2Address[decodeWithdrawUserId(inputs[2])];
         uint256 data = genUserSignedWithdrawData(inputs[2], token);
 
         bytes32 hash = getWithdrawDataHash(inputs[0], inputs[1], data);
