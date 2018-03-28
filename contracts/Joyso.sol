@@ -367,6 +367,69 @@ contract Joyso is Ownable, JoysoDataDecoder {
         userNonce[user] = nonce;
     }
 
+    /*
+     * @dev bulk transfer the tokens to the new version 
+    */
+    function migrate(uint256[] inputs) onlyAdmin external {
+        /**
+            inputs[0] (uint256) new contract address;
+            inputs[i+1] (uint256) gasFee;
+            inputs[i+2] (uint256) dataV
+            inputs[i+3] (bytes32) r
+            inputs[i+4] (bytes32) s
+            -----------------------------------
+            dataV[0 .. 7] (uint256) nonce --> doesnt used in contract, its for generating different hash
+            dataV[23..23] (uint256) paymentMethod --> 0: ether, 1: JOY, 2: token
+            dataV[24..24] (uint256) v --> should be uint8 when used
+            dataV[52..55] (uint256) tokenId
+            dataV[56..63] (uint256) userId
+            -----------------------------------
+            user withdraw singature (uint256)
+            (this.address, newAddress, gasFee, data)
+            -----------------------------------
+            data [0 .. 7] (uint256) nonce --> does not used when withdraw
+            data [23..23] (uint256) paymentMethod
+            data [24..63] (address) tokenAddress
+         */
+        address token = tokenId2Address[decodeWithdrawTokenId(inputs[3])];
+        uint256 totalSend = 0;
+        uint256 v_256;
+        uint256 paymentMethod;
+        uint256 data;
+        bytes32 hash;
+        address[] memory users;
+        uint256[] memory amounts;
+        for (uint256 i = 0; i < inputs.length; i+=4) {
+            users[i/4 - 1] = userId2Address[decodeWithdrawUserId(inputs[i+2])];
+            v_256 = retrieveV(inputs[i+2]);
+            data = genUserSignedWithdrawData(inputs[i+2], token);
+            hash = keccak256(this, inputs[0], inputs[i+1], data);
+            require(!usedHash[hash]);
+            require(verify(hash, users[i/4 - 1], (uint8)(v_256), (bytes32)(inputs[i+3]), (bytes32)(inputs[i+4])));
+            if(paymentMethod == PAY_BY_JOY) {
+                balances[joyToken][users[i/4 - 1]] = balances[joyToken][users[i/4 - 1]].sub(inputs[i+1]);
+                balances[joyToken][joysoWallet] = balances[joyToken][joysoWallet].add(inputs[i+1]);
+            } else if (paymentMethod == PAY_BY_TOKEN) {
+                balances[token][users[i/4 - 1]] = balances[token][users[i/4 - 1]].sub(inputs[i+1]);
+                balances[token][joysoWallet] = balances[token][joysoWallet].add(inputs[i+1]);
+            } else {
+                balances[0][users[i/4 - 1]] = balances[0][users[i/4 - 1]].sub(inputs[i+1]);
+                balances[0][joysoWallet] = balances[0][joysoWallet].add(inputs[i+1]);
+            }
+            amounts[i/4 - 1] = balances[token][users[i/4 - 1]];
+            totalSend = totalSend.add(amounts[i/4 - 1]);
+            balances[token][users[i/4 - 1]] = 0;
+            usedHash[hash] = true;
+        }
+        if (token == 0) {
+            require(address(inputs[0]).call.value(totalSend)(bytes4(keccak256("migrate(address[], uint256[], uint256)")), users, amounts, 0));
+        } else {
+            Token(token).transfer(address(inputs[0]), totalSend);
+            require(address(inputs[0]).call(bytes4(keccak256("migrate(address[], uint256[], uint256")), users, amounts, totalSend));
+        }
+
+    }
+
     // -------------------------------------------- internal/private function
     function addUser (address _address) internal {
         if (userAddress2Id[_address] != 0) {
