@@ -5,6 +5,7 @@ const JoysoMock = artifacts.require("./JoysoMock.sol")
 const TestToken = artifacts.require("./TestToken.sol")
 const util = require("ethereumjs-util")
 const ABI = require('ethereumjs-abi')
+const web3Utils = require('web3-utils')
 const _ = require('lodash')
 
 const ETHER = "0x0000000000000000000000000000000000000000"
@@ -175,7 +176,13 @@ module.exports = {
                 tokenSellId, tokenBuyId, userId)
             //var letUserSignData = await joyso.genUserSignedOrderData.call(inputDataWithoutV, isBuy, token)
             var letUserSignData = genOrderDataInUserSigned(inputDataWithoutV, isBuy, token) 
-            var userShouldSignIt = await joyso.getOrderDataHash.call(amountSell, amountBuy, gasFee, letUserSignData)
+            //var userShouldSignIt = await joyso.getOrderDataHash.call(amountSell, amountBuy, gasFee, letUserSignData)
+            var userShouldSignIt = await web3Utils.soliditySha3({type: "address", value: joyso.address}, 
+                                                                amountSell,
+                                                                amountBuy,
+                                                                gasFee,
+                                                                letUserSignData
+                                                            )
             var sig = web3.eth.sign(user, userShouldSignIt).slice(2)
             var r = `0x${sig.slice(0, 64)}`
             var s = `0x${sig.slice(64, 128)}`

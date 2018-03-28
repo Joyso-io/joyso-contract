@@ -65,6 +65,24 @@ contract JoysoDataDecoder {
     }
 
     /**
+     * @dev decode token base Match 
+     */
+    function decodeTokenOrderTokenIdAndIsBuy (uint256 data) internal pure returns (uint256 tokenId, uint256 baseId, uint256 isBuy) {
+        data = data & 0x000000000000000000000000000000000000000000000000ffffffffffffffff;
+        uint256 tokenSellId = data / (0x0000000000000000000000000000000000000000000000000000ffffffffffff + 1);
+        data = data & 0x0000000000000000000000000000000000000000000000000000ffffffffffff;
+        uint256 tokenBuyId = data / (0x00000000000000000000000000000000000000000000000000000000ffffffff + 1);
+        isBuy = data & 0x00000000000000000000000f0000000000000000000000000000000000000000;
+        if (isBuy == ORDER_ISBUY) {
+            tokenId = tokenBuyId;
+            baseId = tokenSellId;
+        } else {
+            tokenId = tokenSellId;
+            baseId = tokenBuyId;
+        }
+    }
+
+    /**
      * @dev get userId   
      * @dev userId take 4 bytes 
      * @dev from 1 to 4294967295  
@@ -116,6 +134,5 @@ contract JoysoDataDecoder {
         data = data | _isBuy;
         data = data | (uint256)(_address);
     }
-
 }
 
