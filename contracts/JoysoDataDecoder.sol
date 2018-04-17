@@ -68,10 +68,11 @@ contract JoysoDataDecoder {
      * @dev decode token base Match 
      */
     function decodeTokenOrderTokenIdAndIsBuy (uint256 data) internal pure returns (uint256 tokenId, uint256 baseId, uint256 isBuy) {
-        data = data & 0x000000000000000000000000000000000000000000000000ffffffffffffffff;
-        uint256 tokenSellId = data / (0x0000000000000000000000000000000000000000000000000000ffffffffffff + 1);
-        data = data & 0x0000000000000000000000000000000000000000000000000000ffffffffffff;
-        uint256 tokenBuyId = data / (0x00000000000000000000000000000000000000000000000000000000ffffffff + 1);
+        uint256 _data;
+        _data = data & 0x000000000000000000000000000000000000000000000000ffffffffffffffff;
+        uint256 tokenSellId = _data / (0x0000000000000000000000000000000000000000000000000000ffffffffffff + 1);
+        _data = data & 0x0000000000000000000000000000000000000000000000000000ffffffffffff;
+        uint256 tokenBuyId = _data / (0x00000000000000000000000000000000000000000000000000000000ffffffff + 1);
         isBuy = data & 0x00000000000000000000000f0000000000000000000000000000000000000000;
         if (isBuy == ORDER_ISBUY) {
             tokenId = tokenBuyId;
@@ -80,6 +81,11 @@ contract JoysoDataDecoder {
             tokenId = tokenSellId;
             baseId = tokenBuyId;
         }
+    }
+
+    function decodeTokenOrderJoyPrice (uint256 data) internal pure returns (uint256 joyPrice) {
+        uint256 _data = data & 0x0000000000000000000000000fffffffffffffffffffffffffffffffffffffff;
+        return _data / (0x000000000000000000000000000000000000000000000000ffffffffffffffff + 1);                                                   
     }
 
     /**
@@ -144,7 +150,13 @@ contract JoysoDataDecoder {
 
     function genUserSignedOrderData (uint256 _data, uint256 _isBuy, address _address) internal pure returns (uint256) {
         _data = _data & 0xfffffffffffffffffffffff00000000000000000000000000000000000000000;
+                        
         _data = _data | _isBuy;
+        return _data | (uint256)(_address);
+    }
+
+    function genUserSignedTokenOrderData (uint256 _data, address _address) internal pure returns (uint256) {
+        _data = _data & 0xffffffffffffffffffffffff0000000000000000000000000000000000000000;
         return _data | (uint256)(_address);
     }
 }

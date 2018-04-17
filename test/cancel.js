@@ -175,4 +175,61 @@ contract('cancel.js', function(accounts) {
     }
   })
 
+  it("tokenMatch should fail if the taker order's nonce is less than userNonce", async function() {
+    var joyso, token, joy
+    var temp = await helper.setupEnvironment()
+    joyso = await Joyso.at(temp[0])
+    token = await TestToken.at(temp[1])
+    joy = await TestToken.at(temp[2])
+
+    var inputs = []
+    inputs = await helper.generateCancel(helper.ether(0.001), 0x1234, 0, user1, joyso.address)
+    await joyso.cancelByAdmin(inputs, {from: admin})
+
+    inputs = []
+    var order1 = await helper.generateTokenOrder(helper.ether(0.5), helper.ether(0.5), helper.ether(0.01),
+                                0x0000001, 20, 10, 0, ORDER_ISBUY, ETHER, token.address, user1, joyso.address)
+    Array.prototype.push.apply(inputs, order1)
+
+    var order2 = await helper.generateTokenOrder(helper.ether(0.5),helper.ether(0.5), helper.ether(0.01),
+    0x0000002, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address)
+    Array.prototype.push.apply(inputs, order2)
+
+    try {
+      await joyso.matchTokenOrderByAdmin(inputs, {from: admin, gas: 4700000})
+      assert.fail('Expected revert not received');
+    } catch (error) {
+      const revertFound = error.message.search('revert') >= 0;
+      assert(revertFound, `Expected "revert", got ${error} instead`);
+    }
+  })
+
+  it("match should fail if the maker order's nonce is less than userNonce", async function() {
+    var joyso, token, joy
+    var temp = await helper.setupEnvironment()
+    joyso = await Joyso.at(temp[0])
+    token = await TestToken.at(temp[1])
+    joy = await TestToken.at(temp[2])
+
+    var inputs = []
+    inputs = await helper.generateCancel(helper.ether(0.001), 0x1234, 0, user2, joyso.address)
+    await joyso.cancelByAdmin(inputs, {from: admin})
+
+    inputs = []
+    var order1 = await helper.generateTokenOrder(helper.ether(0.5), helper.ether(0.5), helper.ether(0.01),
+                                0x0000001, 20, 10, 0, ORDER_ISBUY, ETHER, token.address, user1, joyso.address)
+    Array.prototype.push.apply(inputs, order1)
+
+    var order2 = await helper.generateTokenOrder(helper.ether(0.5),helper.ether(0.5), helper.ether(0.01),
+    0x0000002, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address)
+    Array.prototype.push.apply(inputs, order2)
+
+    try {
+      await joyso.matchTokenOrderByAdmin(inputs, {from: admin, gas: 4700000})
+      assert.fail('Expected revert not received');
+    } catch (error) {
+      const revertFound = error.message.search('revert') >= 0;
+      assert(revertFound, `Expected "revert", got ${error} instead`);
+    }
+  })
 });
