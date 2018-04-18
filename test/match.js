@@ -80,7 +80,7 @@ contract('match.js', function (accounts) {
         var user3_ether_balance = await joyso.getBalance.call(ETHER, user3)
         var user3_token_balance = await joyso.getBalance.call(token.address, user3)
         var joyso_ether_balance = await joyso.getBalance.call(ETHER, joysoWallet)
-        
+
         await joyso.matchByAdmin(inputs, {from: admin})
 
         var user1_ether_balance2 = await joyso.getBalance.call(ETHER, user1)
@@ -261,7 +261,7 @@ contract('match.js', function (accounts) {
         var user2_ether_balance = await joyso.getBalance.call(ETHER, user2)
         var user2_token_balance = await joyso.getBalance.call(token.address, user2)
         var joyso_ether_balance = await joyso.getBalance.call(ETHER, joysoWallet)
-        
+
         await joyso.matchByAdmin(inputs, {from: admin})
 
         var user1_ether_balance2 = await joyso.getBalance.call(ETHER, user1)
@@ -290,7 +290,7 @@ contract('match.js', function (accounts) {
         var user3_ether_balance3 = await joyso.getBalance(ETHER, user3)
         var user3_token_balance3 = await joyso.getBalance(token.address, user3)
         var joyso_ether_balance3 = await joyso.getBalance(ETHER, joysoWallet)
-        
+
         assert.equal(user2_ether_balance3 - user2_ether_balance2, helper.ether(0.25 - 0.00025))
         assert.equal(user2_token_balance2 - user2_token_balance3, helper.ether(0.25))
         assert.equal(user3_ether_balance2 - user3_ether_balance3, helper.ether(0.25 + 0.01 + 0.0005))
@@ -318,7 +318,7 @@ contract('match.js', function (accounts) {
         var user2_joy_balance = await joyso.getBalance.call(joy.address, user2)
         var joyso_ether_balance = await joyso.getBalance.call(ETHER, joysoWallet)
         var joyso_joy_balance = await joyso.getBalance.call(joy.address, joysoWallet)
-        
+
         await joyso.matchByAdmin(inputs, {from: admin})
 
         var user1_ether_balance2 = await joyso.getBalance.call(ETHER, user1)
@@ -353,7 +353,7 @@ contract('match.js', function (accounts) {
         var user3_token_balance3 = await joyso.getBalance(token.address, user3)
         var joyso_ether_balance3 = await joyso.getBalance(ETHER, joysoWallet)
         var joyso_joy_balance3 = await joyso.getBalance(joy.address, joysoWallet)
-        
+
         assert.equal(user2_ether_balance3 - user2_ether_balance2, helper.ether(0.25))
         assert.equal(user2_token_balance2 - user2_token_balance3, helper.ether(0.25))
         assert.equal(user2_joy_balance2.minus(user2_joy_balance3), helper.ether(0.00025)/10**5/1000)
@@ -466,6 +466,6 @@ contract('match.js', function (accounts) {
         assert.equal(user1_token_balance, web3.toWei(1.000000000006, 'ether'), "user1 token balance")
         assert.equal(user2_ether_balance, web3.toWei(1.000082915, 'ether'), "user2 ether balance")
         assert.equal(user2_token_balance, web3.toWei(0.999999999994, 'ether'), "user2 token balance")
-        assert.equal(joysoWallet_balance, web3.toWei(0.000003255, 'ether'), "joysoWallet ether balance")        
+        assert.equal(joysoWallet_balance, web3.toWei(0.000003255, 'ether'), "joysoWallet ether balance")
     })
 })

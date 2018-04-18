@@ -74,7 +74,7 @@ const genOrderInputData = function (dataWithoutV, v) {
         temp += dataWithoutV.substring(27, 66)
     }
 
-    return temp        
+    return temp
 }
 
 module.exports = {
@@ -93,13 +93,13 @@ module.exports = {
           temp += '0'
         }
         temp += _.padStart('0', 40, '0')
-    
+
         var msg = await joyso.getCancelDataHash.call(gasFee, temp)
         var sig = web3.eth.sign(user, msg).slice(2)
         var r = `0x${sig.slice(0, 64)}`
         var s = `0x${sig.slice(64, 128)}`
         var v = web3.toDecimal(sig.slice(128, 130)) + 27
-    
+
         var temp2 = temp.substring(0, 26)
         if (v == 27) {
           temp2 += '0'
@@ -109,14 +109,14 @@ module.exports = {
         temp2 += _.padStart('0', 31, '0')
         temp2 += _.padStart(userId.toString(16), 8, '0')
         var dataV = temp2
-    
+
         array[0] = gasFee
         array[1] = dataV
         array[2] = r
         array[3] = s
         return array
     },
-    
+
     generateWithdraw : async function (amount, gasFee, paymentMethod, tokenAddress, userAddress, joysoAddress) {
         var array = []
         var joyso = await Joyso.at(joysoAddress)
@@ -148,7 +148,7 @@ module.exports = {
         var r = `0x${sig.slice(0, 64)}`
         var s = `0x${sig.slice(64, 128)}`
         var v = web3.toDecimal(sig.slice(128, 130)) + 27
-        
+
         // withdraw input
         /*
             inputs[0] (uint256) amount;
@@ -161,7 +161,7 @@ module.exports = {
             dataV[23..23] (uint256) paymentMethod --> 0: ether, 1: JOY, 2: token
             dataV[24..24] (uint256) v --> 0:27, 1:28 should be uint8 when used
             dataV[52..55] (uint256) tokenId
-            dataV[56..63] (uint256) userId        
+            dataV[56..63] (uint256) userId
         */
 
         var tokenId = await joyso.tokenAddress2Id.call(tokenAddress)
@@ -218,7 +218,7 @@ module.exports = {
         var r = `0x${sig.slice(0, 64)}`
         var s = `0x${sig.slice(64, 128)}`
         var v = web3.toDecimal(sig.slice(128, 130)) + 27
-        
+
         // withdraw input
         /*
             inputs[0] (uint256) amount;
@@ -231,7 +231,7 @@ module.exports = {
             dataV[23..23] (uint256) paymentMethod --> 0: ether, 1: JOY, 2: token
             dataV[24..24] (uint256) v --> 0:27, 1:28 should be uint8 when used
             dataV[52..55] (uint256) tokenId
-            dataV[56..63] (uint256) userId        
+            dataV[56..63] (uint256) userId
         */
 
         var tokenId = await joyso.tokenAddress2Id.call(tokenAddress)
@@ -255,7 +255,7 @@ module.exports = {
         return array
     },
 
-    generateOrder : async function (amountSell, amountBuy, gasFee, nonce, takerFee, makerFee, 
+    generateOrder : async function (amountSell, amountBuy, gasFee, nonce, takerFee, makerFee,
         joyPrice, isBuy, tokenSell, tokenBuy, user, joysoAddress) {
             var array = []
             var joyso = await Joyso.at(joysoAddress)
@@ -269,9 +269,9 @@ module.exports = {
             var inputDataWithoutV = genOrderInputDataWithoutV(nonce, takerFee, makerFee, joyPrice, 0,
                 tokenSellId, tokenBuyId, userId)
             //var letUserSignData = await joyso.genUserSignedOrderData.call(inputDataWithoutV, isBuy, token)
-            var letUserSignData = genOrderDataInUserSigned(inputDataWithoutV, isBuy, token) 
+            var letUserSignData = genOrderDataInUserSigned(inputDataWithoutV, isBuy, token)
             //var userShouldSignIt = await joyso.getOrderDataHash.call(amountSell, amountBuy, gasFee, letUserSignData)
-            var userShouldSignIt = await web3Utils.soliditySha3({type: "address", value: joyso.address}, 
+            var userShouldSignIt = await web3Utils.soliditySha3({type: "address", value: joyso.address},
                                                                 amountSell,
                                                                 amountBuy,
                                                                 gasFee,
@@ -291,7 +291,7 @@ module.exports = {
             return array
     },
 
-    generateTokenOrder : async function (amountSell, amountBuy, gasFee, nonce, takerFee, makerFee, 
+    generateTokenOrder : async function (amountSell, amountBuy, gasFee, nonce, takerFee, makerFee,
         joyPrice, isBuy, tokenSell, tokenBuy, user, joysoAddress) {
             var array = []
             var joyso = await Joyso.at(joysoAddress)
@@ -306,9 +306,9 @@ module.exports = {
             }
             var inputDataWithoutV = genTokenOrderInputDataWithoutV(nonce, takerFee, makerFee, joyPrice, isBuy,
                 tokenSellId, tokenBuyId, userId)
-            var letUserSignData = genOrderDataInUserSigned(inputDataWithoutV, isBuy, token) 
+            var letUserSignData = genOrderDataInUserSigned(inputDataWithoutV, isBuy, token)
             //var userShouldSignIt = await joyso.getOrderDataHash.call(amountSell, amountBuy, gasFee, letUserSignData)
-            var userShouldSignIt = await web3Utils.soliditySha3({type: "address", value: joyso.address}, 
+            var userShouldSignIt = await web3Utils.soliditySha3({type: "address", value: joyso.address},
                                                                 amountSell,
                                                                 amountBuy,
                                                                 gasFee,
@@ -450,7 +450,7 @@ module.exports = {
         console.log("user1_joy_balance: " + user1_joy_balance)
         console.log("user2_joy_balance: " + user2_joy_balance)
         console.log("user3_joy_balance: " + user3_joy_balance)
-        console.log("joyso wallet ether balance: " + joyso_ether_balance) 
-        console.log("joyso_joy_balance: " + joyso_joy_balacne)     
+        console.log("joyso wallet ether balance: " + joyso_ether_balance)
+        console.log("joyso_joy_balance: " + joyso_joy_balacne)
     }
 }

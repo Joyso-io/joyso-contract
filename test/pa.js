@@ -55,8 +55,8 @@ contract('gas analysis', function (accounts) {
         tx = await joyso.matchByAdmin.sendTransaction(inputs, {from: admin, gas: 4700000})
         txReceipt = await web3.eth.getTransactionReceipt(tx)
         console.log("3 order match: " + txReceipt.gasUsed)
-        
-        inputs = [] 
+
+        inputs = []
         order1 = await helper.generateOrder(helper.ether(0.005), helper.ether(0.005), helper.ether(0.0001), 6, 20, 10, 0, ORDER_ISBUY, ETHER, token.address, user1, joyso.address)
         order2 = await helper.generateOrder(helper.ether(0.001), helper.ether(0.001), helper.ether(0.0001), 7, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address)
         order3 = await helper.generateOrder(helper.ether(0.001), helper.ether(0.001), helper.ether(0.0001), 8, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address)
@@ -69,7 +69,7 @@ contract('gas analysis', function (accounts) {
         txReceipt = await web3.eth.getTransactionReceipt(tx)
         console.log("4 order match: " + txReceipt.gasUsed)
 
-        inputs = [] 
+        inputs = []
         order1 = await helper.generateOrder(helper.ether(0.005), helper.ether(0.005), helper.ether(0.0001), 10, 20, 10, 0, ORDER_ISBUY, ETHER, token.address, user1, joyso.address)
         order2 = await helper.generateOrder(helper.ether(0.001), helper.ether(0.001), helper.ether(0.0001), 11, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address)
         order3 = await helper.generateOrder(helper.ether(0.001), helper.ether(0.001), helper.ether(0.0001), 12, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address)
@@ -84,7 +84,7 @@ contract('gas analysis', function (accounts) {
         txReceipt = await web3.eth.getTransactionReceipt(tx)
         console.log("5 order match: " + txReceipt.gasUsed)
 
-        inputs = [] 
+        inputs = []
         order1 = await helper.generateOrder(helper.ether(0.005), helper.ether(0.005), helper.ether(0.0001), 15, 20, 10, 0, ORDER_ISBUY, ETHER, token.address, user1, joyso.address)
         order2 = await helper.generateOrder(helper.ether(0.001), helper.ether(0.001), helper.ether(0.0001), 16, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address)
         order3 = await helper.generateOrder(helper.ether(0.001), helper.ether(0.001), helper.ether(0.0001), 17, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address)
@@ -101,7 +101,7 @@ contract('gas analysis', function (accounts) {
         txReceipt = await web3.eth.getTransactionReceipt(tx)
         console.log("6 order match: " + txReceipt.gasUsed)
 
-        inputs = [] 
+        inputs = []
         order1 = await helper.generateOrder(helper.ether(0.006), helper.ether(0.006), helper.ether(0.0001), 21, 20, 10, 0, ORDER_ISBUY, ETHER, token.address, user1, joyso.address)
         order2 = await helper.generateOrder(helper.ether(0.001), helper.ether(0.001), helper.ether(0.0001), 22, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address)
         order3 = await helper.generateOrder(helper.ether(0.001), helper.ether(0.001), helper.ether(0.0001), 23, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address)
@@ -120,7 +120,7 @@ contract('gas analysis', function (accounts) {
         txReceipt = await web3.eth.getTransactionReceipt(tx)
         console.log("7 order match: " + txReceipt.gasUsed)
 
-        inputs = [] 
+        inputs = []
         order1 = await helper.generateOrder(helper.ether(0.007), helper.ether(0.007), helper.ether(0.0001), 28, 20, 10, 0, ORDER_ISBUY, ETHER, token.address, user1, joyso.address)
         order2 = await helper.generateOrder(helper.ether(0.001), helper.ether(0.001), helper.ether(0.0001), 29, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address)
         order3 = await helper.generateOrder(helper.ether(0.001), helper.ether(0.001), helper.ether(0.0001), 30, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address)
@@ -141,7 +141,7 @@ contract('gas analysis', function (accounts) {
         txReceipt = await web3.eth.getTransactionReceipt(tx)
         console.log("8 order match: " + txReceipt.gasUsed)
 
-        inputs = [] 
+        inputs = []
         order1 = await helper.generateOrder(helper.ether(0.008), helper.ether(0.008), helper.ether(0.0001), 36, 20, 10, 0, ORDER_ISBUY, ETHER, token.address, user1, joyso.address)
         order2 = await helper.generateOrder(helper.ether(0.001), helper.ether(0.001), helper.ether(0.0001), 37, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address)
         order3 = await helper.generateOrder(helper.ether(0.001), helper.ether(0.001), helper.ether(0.0001), 38, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address)
@@ -164,7 +164,7 @@ contract('gas analysis', function (accounts) {
         txReceipt = await web3.eth.getTransactionReceipt(tx)
         console.log("9 order match: " + txReceipt.gasUsed)
 
-        inputs = [] 
+        inputs = []
         order1 = await helper.generateOrder(helper.ether(0.009), helper.ether(0.009), helper.ether(0.0001), 45, 20, 10, 0, ORDER_ISBUY, ETHER, token.address, user1, joyso.address)
         order2 = await helper.generateOrder(helper.ether(0.001), helper.ether(0.001), helper.ether(0.0001), 46, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address)
         order3 = await helper.generateOrder(helper.ether(0.001), helper.ether(0.001), helper.ether(0.0001), 47, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address)
