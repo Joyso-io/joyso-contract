@@ -215,7 +215,7 @@ contract('joyso withdraw', function (accounts) {
         } catch (error) {
             const revertFound = error.message.search('revert') >= 0;
             assert(revertFound, `Expected "revert", got ${error} instead`);
-        }        
+        }
     })
 
     it("withdraw token, pay by ether. Should fail if no token balance.", async function () {
@@ -234,7 +234,7 @@ contract('joyso withdraw', function (accounts) {
         } catch (error) {
             const revertFound = error.message.search('revert') >= 0;
             assert(revertFound, `Expected "revert", got ${error} instead`);
-        } 
+        }
     })
 
     it("withdraw token, pay by ether. Should fail if no ether balance.", async function () {
@@ -253,6 +253,6 @@ contract('joyso withdraw', function (accounts) {
         } catch (error) {
             const revertFound = error.message.search('revert') >= 0;
             assert(revertFound, `Expected "revert", got ${error} instead`);
-        } 
+        }
     })
 })

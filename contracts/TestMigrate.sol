@@ -13,7 +13,7 @@ interface TToken {
 contract TestMigrate {
     mapping (address => mapping (address => uint256)) public balances;
 
-    function migrate(address[2] users, uint256[2] amounts, address tokenAddr) external payable returns (bool) {        
+    function migrate(address[2] users, uint256[2] amounts, address tokenAddr) external payable returns (bool) {
         uint256 ll = users.length;
         uint256 sum = 0;
         require (ll == amounts.length);
@@ -30,18 +30,18 @@ contract TestMigrate {
 
         return true;
     }
-    
+
     function migrateSingle(address user, uint256 amount, address tokenAddr) external payable returns (bool) {
         if(tokenAddr == address(0)) {
             require (amount == msg.value);
         } else {
             require (TToken(tokenAddr).transferFrom(msg.sender, this, amount));
-        } 
+        }
 
         balances[tokenAddr][user] += amount;
         return true;
     }
-    
+
     function getBalance (address token, address account) external view returns (uint256) {
         return balances[token][account];
     }

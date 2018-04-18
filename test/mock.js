@@ -104,7 +104,7 @@ contract('Joyso mock', function (accounts) {
             assert(revertFound, `Expected "revert", got ${error} instead`);
         }
     })
- 
+
     it("withdraw token should fail if no balance", async function () {
         var joyso, token, joy
         var temp = await helper.setupMockEnvironment()
@@ -138,6 +138,6 @@ contract('Joyso mock', function (accounts) {
         } catch (error) {
             const revertFound = error.message.search('revert') >= 0;
             assert(revertFound, `Expected "revert", got ${error} instead`);
-        }        
+        }
     })
 })

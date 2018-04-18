@@ -138,7 +138,7 @@ contract('Joyso misc.js', function (accounts) {
         Array.prototype.push.apply(inputs, order1)
         await joyso.matchByAdmin(inputs, {from: admin})
     })
-    
+
     it("register token can not use other token's index", async function() {
         var joy = await TestToken.new('tt', 'tt', 18, {from: admin})
         var joyso = await Joyso.new(joysoWallet, joy.address, {from: admin})
@@ -153,8 +153,8 @@ contract('Joyso misc.js', function (accounts) {
         } catch (error) {
             const revertFound = error.message.search('revert') >= 0 || error.message.search('assert') >= 0;
             assert(revertFound, `Expected "revert", got ${error} instead`);
-        }       
+        }
     })
 
-    
+
 })
