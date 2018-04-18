@@ -7,8 +7,10 @@
     "test": "test"
   },
   "scripts": {
+    "truffle": "truffle",
     "compile": "truffle compile",
     "test": "truffle test",
+    "report": "solidity-coverage",
     "ropsten": "truffle migrate --network ropsten",
     "dev": "truffle migrate --network development"
   },

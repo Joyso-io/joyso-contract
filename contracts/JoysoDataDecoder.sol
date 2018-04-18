@@ -1,7 +1,7 @@
 pragma solidity 0.4.19;
 
-contract JoysoDataDecoder {
 
+contract JoysoDataDecoder {
     uint256 internal constant ORDER_ISBUY = 0x0000000000000000000000010000000000000000000000000000000000000000;
 
     /**
@@ -67,7 +67,11 @@ contract JoysoDataDecoder {
     /**
      * @dev decode token base Match
      */
-    function decodeTokenOrderTokenIdAndIsBuy (uint256 data) internal pure returns (uint256 tokenId, uint256 baseId, uint256 isBuy) {
+    function decodeTokenOrderTokenIdAndIsBuy (
+        uint256 data
+    )
+        internal pure returns (uint256 tokenId, uint256 baseId, uint256 isBuy)
+    {
         uint256 _data;
         _data = data & 0x000000000000000000000000000000000000000000000000ffffffffffffffff;
         uint256 tokenSellId = _data / (0x0000000000000000000000000000000000000000000000000000ffffffffffff + 1);
@@ -100,7 +104,11 @@ contract JoysoDataDecoder {
     /**
      * @dev is used to retrieve withdrawData
      */
-    function decodeWithdrawData (uint256 _data) internal pure returns (uint256 paymentMethod, uint256 tokenId, uint256 userId) {
+    function decodeWithdrawData (
+        uint256 _data
+    )
+        internal pure returns (uint256 paymentMethod, uint256 tokenId, uint256 userId)
+    {
         /**
             data3
             0x000181bfeb 0000000000000 1 1 000000000000000000000000000 0002 00000001
@@ -128,7 +136,11 @@ contract JoysoDataDecoder {
         return _data & 0x00000000000000000000000000000000000000000000000000000000ffffffff;
     }
 
-    function decodeCancelData (uint256 _data) internal pure returns (uint256 nonce, uint256 paymentMethod, uint256 userId) {
+    function decodeCancelData (
+        uint256 _data
+    )
+        internal pure returns (uint256 nonce, uint256 paymentMethod, uint256 userId)
+    {
         nonce = _data / (0x00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff + 1);
         paymentMethod = _data & 0x00000000000000000000000f0000000000000000000000000000000000000000;
         userId = _data & 0x00000000000000000000000000000000000000000000000000000000ffffffff;
@@ -160,4 +172,3 @@ contract JoysoDataDecoder {
         return _data | (uint256)(_address);
     }
 }
-
