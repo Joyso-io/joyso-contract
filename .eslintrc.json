@@ -14,6 +14,7 @@
         "artifacts": false,
         "contract": false,
         "it": false,
-        "assert": false
+        "assert": false,
+        "web3": false
     }
 }

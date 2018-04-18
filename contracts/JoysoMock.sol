@@ -15,5 +15,5 @@ contract JoysoMock is Joyso {
 
     function setTime (uint256 _t) public {
         _time = _t;
-    } 
+    }
 }
