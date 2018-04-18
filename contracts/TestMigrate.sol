@@ -1,4 +1,5 @@
-pragma solidity ^0.4.19;
+pragma solidity 0.4.19;
+
 
 interface TToken {
     function balanceOf(address who) public view returns (uint256);
@@ -10,20 +11,21 @@ interface TToken {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
+
 contract TestMigrate {
     mapping (address => mapping (address => uint256)) public balances;
 
     function migrate(address[2] users, uint256[2] amounts, address tokenAddr) external payable returns (bool) {
         uint256 ll = users.length;
         uint256 sum = 0;
-        require (ll == amounts.length);
+        require(ll == amounts.length);
         for (uint256 i = 0; i < ll; i++) {
             balances[tokenAddr][users[i]] += amounts[i];
             sum += amounts[i];
         }
 
-        if(tokenAddr == address(0)) {
-            require (sum == msg.value);
+        if (tokenAddr == address(0)) {
+            require(sum == msg.value);
         } else {
             require(TToken(tokenAddr).transferFrom(msg.sender, this, sum));
         }
@@ -32,10 +34,10 @@ contract TestMigrate {
     }
 
     function migrateSingle(address user, uint256 amount, address tokenAddr) external payable returns (bool) {
-        if(tokenAddr == address(0)) {
-            require (amount == msg.value);
+        if (tokenAddr == address(0)) {
+            require(amount == msg.value);
         } else {
-            require (TToken(tokenAddr).transferFrom(msg.sender, this, amount));
+            require(TToken(tokenAddr).transferFrom(msg.sender, this, amount));
         }
 
         balances[tokenAddr][user] += amount;
