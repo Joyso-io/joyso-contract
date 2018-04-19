@@ -111,7 +111,7 @@ contract('cancel.js', accounts => {
     inputs.push(...order2);
 
     try {
-      await joyso.matchByAdmin(inputs, { from: admin, gas: 4700000 });
+      await joyso.matchByAdmin_TwH36(inputs, { from: admin, gas: 4700000 });
       assert.fail('Expected revert not received');
     } catch (error) {
       const revertFound = error.message.search('revert') >= 0;
@@ -137,7 +137,7 @@ contract('cancel.js', accounts => {
     inputs.push(...order2);
 
     try {
-      await joyso.matchByAdmin(inputs, { from: admin, gas: 4700000 });
+      await joyso.matchByAdmin_TwH36(inputs, { from: admin, gas: 4700000 });
       assert.fail('Expected revert not received');
     } catch (error) {
       const revertFound = error.message.search('revert') >= 0;
@@ -163,7 +163,7 @@ contract('cancel.js', accounts => {
     inputs.push(...order2);
 
     try {
-      await joyso.matchTokenOrderByAdmin(inputs, { from: admin, gas: 4700000 });
+      await joyso.matchTokenOrderByAdmin_k44j(inputs, { from: admin, gas: 4700000 });
       assert.fail('Expected revert not received');
     } catch (error) {
       const revertFound = error.message.search('revert') >= 0;
@@ -189,7 +189,7 @@ contract('cancel.js', accounts => {
     inputs.push(...order2);
 
     try {
-      await joyso.matchTokenOrderByAdmin(inputs, { from: admin, gas: 4700000 });
+      await joyso.matchTokenOrderByAdmin_k44j(inputs, { from: admin, gas: 4700000 });
       assert.fail('Expected revert not received');
     } catch (error) {
       const revertFound = error.message.search('revert') >= 0;

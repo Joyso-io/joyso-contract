@@ -29,7 +29,7 @@ contract('gas analysis', accounts => {
       0x0000002, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address);
     Array.prototype.push.apply(inputs, order2);
 
-    let tx = await joyso.matchByAdmin.sendTransaction(inputs, { from: admin, gas: 4700000 });
+    let tx = await joyso.matchByAdmin_TwH36.sendTransaction(inputs, { from: admin, gas: 4700000 });
     let txReceipt = await web3.eth.getTransactionReceipt(tx);
     console.log('2 order match: ' + txReceipt.gasUsed);
 
@@ -40,7 +40,7 @@ contract('gas analysis', accounts => {
     Array.prototype.push.apply(inputs, order1);
     Array.prototype.push.apply(inputs, order2);
     Array.prototype.push.apply(inputs, order3);
-    tx = await joyso.matchByAdmin.sendTransaction(inputs, { from: admin, gas: 4700000 });
+    tx = await joyso.matchByAdmin_TwH36.sendTransaction(inputs, { from: admin, gas: 4700000 });
     txReceipt = await web3.eth.getTransactionReceipt(tx);
     console.log('3 order match: ' + txReceipt.gasUsed);
 
@@ -53,7 +53,7 @@ contract('gas analysis', accounts => {
     Array.prototype.push.apply(inputs, order2);
     Array.prototype.push.apply(inputs, order3);
     Array.prototype.push.apply(inputs, order4);
-    tx = await joyso.matchByAdmin.sendTransaction(inputs, { from: admin, gas: 4700000 });
+    tx = await joyso.matchByAdmin_TwH36.sendTransaction(inputs, { from: admin, gas: 4700000 });
     txReceipt = await web3.eth.getTransactionReceipt(tx);
     console.log('4 order match: ' + txReceipt.gasUsed);
 
@@ -68,7 +68,7 @@ contract('gas analysis', accounts => {
     Array.prototype.push.apply(inputs, order3);
     Array.prototype.push.apply(inputs, order4);
     Array.prototype.push.apply(inputs, order5);
-    tx = await joyso.matchByAdmin.sendTransaction(inputs, { from: admin, gas: 4700000 });
+    tx = await joyso.matchByAdmin_TwH36.sendTransaction(inputs, { from: admin, gas: 4700000 });
     txReceipt = await web3.eth.getTransactionReceipt(tx);
     console.log('5 order match: ' + txReceipt.gasUsed);
 
@@ -85,7 +85,7 @@ contract('gas analysis', accounts => {
     Array.prototype.push.apply(inputs, order4);
     Array.prototype.push.apply(inputs, order5);
     Array.prototype.push.apply(inputs, order6);
-    tx = await joyso.matchByAdmin.sendTransaction(inputs, { from: admin, gas: 4700000 });
+    tx = await joyso.matchByAdmin_TwH36.sendTransaction(inputs, { from: admin, gas: 4700000 });
     txReceipt = await web3.eth.getTransactionReceipt(tx);
     console.log('6 order match: ' + txReceipt.gasUsed);
 
@@ -104,7 +104,7 @@ contract('gas analysis', accounts => {
     Array.prototype.push.apply(inputs, order5);
     Array.prototype.push.apply(inputs, order6);
     Array.prototype.push.apply(inputs, order7);
-    tx = await joyso.matchByAdmin.sendTransaction(inputs, { from: admin, gas: 4700000 });
+    tx = await joyso.matchByAdmin_TwH36.sendTransaction(inputs, { from: admin, gas: 4700000 });
     txReceipt = await web3.eth.getTransactionReceipt(tx);
     console.log('7 order match: ' + txReceipt.gasUsed);
 
@@ -125,7 +125,7 @@ contract('gas analysis', accounts => {
     Array.prototype.push.apply(inputs, order6);
     Array.prototype.push.apply(inputs, order7);
     Array.prototype.push.apply(inputs, order8);
-    tx = await joyso.matchByAdmin.sendTransaction(inputs, { from: admin, gas: 4700000 });
+    tx = await joyso.matchByAdmin_TwH36.sendTransaction(inputs, { from: admin, gas: 4700000 });
     txReceipt = await web3.eth.getTransactionReceipt(tx);
     console.log('8 order match: ' + txReceipt.gasUsed);
 
@@ -148,7 +148,7 @@ contract('gas analysis', accounts => {
     Array.prototype.push.apply(inputs, order7);
     Array.prototype.push.apply(inputs, order8);
     Array.prototype.push.apply(inputs, order9);
-    tx = await joyso.matchByAdmin.sendTransaction(inputs, { from: admin, gas: 4700000 });
+    tx = await joyso.matchByAdmin_TwH36.sendTransaction(inputs, { from: admin, gas: 4700000 });
     txReceipt = await web3.eth.getTransactionReceipt(tx);
     console.log('9 order match: ' + txReceipt.gasUsed);
 
@@ -173,19 +173,19 @@ contract('gas analysis', accounts => {
     Array.prototype.push.apply(inputs, order8);
     Array.prototype.push.apply(inputs, order9);
     Array.prototype.push.apply(inputs, order10);
-    tx = await joyso.matchByAdmin.sendTransaction(inputs, { from: admin, gas: 4700000 });
+    tx = await joyso.matchByAdmin_TwH36.sendTransaction(inputs, { from: admin, gas: 4700000 });
     txReceipt = await web3.eth.getTransactionReceipt(tx);
     console.log('10 order match: ' + txReceipt.gasUsed);
 
     inputs = [];
     inputs = await helper.generateWithdraw(helper.ether(0.5), helper.ether(0.02), 0, ETHER, user1, joyso.address);
-    tx = await joyso.withdrawByAdmin.sendTransaction(inputs, { from: admin });
+    tx = await joyso.withdrawByAdmin_Unau.sendTransaction(inputs, { from: admin });
     txReceipt = await web3.eth.getTransactionReceipt(tx);
     console.log('withdraw by admin (ether): ' + txReceipt.gasUsed);
 
     inputs = [];
     inputs = await helper.generateWithdraw(helper.ether(0.5), helper.ether(0.02), 0, token.address, user1, joyso.address);
-    tx = await joyso.withdrawByAdmin.sendTransaction(inputs, { from: admin });
+    tx = await joyso.withdrawByAdmin_Unau.sendTransaction(inputs, { from: admin });
     txReceipt = await web3.eth.getTransactionReceipt(tx);
     console.log('withdraw by admin (token): ' + txReceipt.gasUsed);
   });

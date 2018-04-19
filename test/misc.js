@@ -25,7 +25,7 @@ contract('Joyso misc.js', function (accounts) {
     Array.prototype.push.apply(inputs, order2);
 
     try {
-      await joyso.matchByAdmin(inputs, { from: user1 });
+      await joyso.matchByAdmin_TwH36(inputs, { from: user1 });
       assert.fail('Expected revert not received');
     } catch (error) {
       const revertFound = error.message.search('revert') >= 0;
@@ -107,7 +107,7 @@ contract('Joyso misc.js', function (accounts) {
     const order2 = await helper.generateOrder(150, 15000000000, 1000000000000, 11, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address);
     Array.prototype.push.apply(inputs, order2);
     await joyso.addToAdmin(user1, true, { from: admin });
-    await joyso.matchByAdmin(inputs, { from: user1 });
+    await joyso.matchByAdmin_TwH36(inputs, { from: user1 });
   });
 
   it('for case1, maker and taker order exchage the place should still success', async function () {
@@ -121,7 +121,7 @@ contract('Joyso misc.js', function (accounts) {
     const order2 = await helper.generateOrder(150, 15000000000, 1000000000000, 11, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address);
     Array.prototype.push.apply(inputs, order2);
     Array.prototype.push.apply(inputs, order1);
-    await joyso.matchByAdmin(inputs, { from: admin });
+    await joyso.matchByAdmin_TwH36(inputs, { from: admin });
   });
 
   it("register token can not use other token's index", async function () {

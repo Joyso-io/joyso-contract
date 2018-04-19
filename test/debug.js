@@ -32,7 +32,7 @@ contract('debug.js', accounts => {
     const user2TokenBalance = await joyso.getBalance(token.address, user2);
     const joysoEtherBalance = await joyso.getBalance(ETHER, joysoWallet);
 
-    await joyso.matchTokenOrderByAdmin(inputs, { from: admin, gas: 4700000 });
+    await joyso.matchTokenOrderByAdmin_k44j(inputs, { from: admin, gas: 4700000 });
     const user1EtherBalance2 = await joyso.getBalance(ETHER, user1);
     const user2EtherBalance2 = await joyso.getBalance(ETHER, user2);
     const user1TokenBalance2 = await joyso.getBalance(token.address, user1);

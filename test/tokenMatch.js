@@ -32,7 +32,7 @@ contract('tokenMatch.js', accounts => {
     const user2TokenBalance = await joyso.getBalance(token.address, user2);
     const joysoEtherBalance = await joyso.getBalance(ETHER, joysoWallet);
 
-    await joyso.matchTokenOrderByAdmin(inputs, { from: admin });
+    await joyso.matchTokenOrderByAdmin_k44j(inputs, { from: admin });
     const user1EtherBalance2 = await joyso.getBalance(ETHER, user1);
     const user2EtherBalance2 = await joyso.getBalance(ETHER, user2);
     const user1TokenBalance2 = await joyso.getBalance(token.address, user1);
@@ -67,7 +67,7 @@ contract('tokenMatch.js', accounts => {
     const user2TokenBalance = await joyso.getBalance(token.address, user2);
     const joysoJoyBalance = await joyso.getBalance(joy.address, joysoWallet);
 
-    await joyso.matchTokenOrderByAdmin(inputs, { from: admin });
+    await joyso.matchTokenOrderByAdmin_k44j(inputs, { from: admin });
     const user1JoyBalance2 = await joyso.getBalance(joy.address, user1);
     const user2JoyBalance2 = await joyso.getBalance(joy.address, user2);
     const user1TokenBalance2 = await joyso.getBalance(token.address, user1);
@@ -101,7 +101,7 @@ contract('tokenMatch.js', accounts => {
     const user2TokenBalance = await joyso.getBalance(token.address, user2);
     const joysoEtherBalance = await joyso.getBalance(ETHER, joysoWallet);
 
-    await joyso.matchTokenOrderByAdmin(inputs, { from: admin });
+    await joyso.matchTokenOrderByAdmin_k44j(inputs, { from: admin });
     const user1EtherBalance2 = await joyso.getBalance(ETHER, user1);
     const user2EtherBalance2 = await joyso.getBalance(ETHER, user2);
     const user1TokenBalance2 = await joyso.getBalance(token.address, user1);
@@ -117,7 +117,6 @@ contract('tokenMatch.js', accounts => {
   });
 
   it("it should fail if taker's signature is wrong.", async () => {
-    
     const temp = await helper.setupEnvironment();
     const joyso = await Joyso.at(temp[0]);
     const token = await TestToken.at(temp[1]);
@@ -133,7 +132,7 @@ contract('tokenMatch.js', accounts => {
     Array.prototype.push.apply(inputs, order2);
 
     try {
-      await joyso.matchTokenOrderByAdmin(inputs, { from: admin, gas: 4700000 });
+      await joyso.matchTokenOrderByAdmin_k44j(inputs, { from: admin, gas: 4700000 });
       assert.fail('Expected revert not received');
     } catch (error) {
       const revertFound = error.message.search('revert') >= 0;
@@ -157,7 +156,7 @@ contract('tokenMatch.js', accounts => {
     inputs[11] = 1234; // s
 
     try {
-      await joyso.matchTokenOrderByAdmin(inputs, { from: admin, gas: 4700000 });
+      await joyso.matchTokenOrderByAdmin_k44j(inputs, { from: admin, gas: 4700000 });
       assert.fail('Expected revert not received');
     } catch (error) {
       const revertFound = error.message.search('revert') >= 0;
@@ -178,10 +177,10 @@ contract('tokenMatch.js', accounts => {
     const order2 = await helper.generateTokenOrder(helper.ether(0.5), helper.ether(0.5), helper.ether(0.01),
       0x0000002, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address);
     Array.prototype.push.apply(inputs, order2);
-    await joyso.matchTokenOrderByAdmin(inputs, { from: admin });
+    await joyso.matchTokenOrderByAdmin_k44j(inputs, { from: admin });
 
     try {
-      await joyso.matchTokenOrderByAdmin(inputs, { from: admin, gas: 4700000 });
+      await joyso.matchTokenOrderByAdmin_k44j(inputs, { from: admin, gas: 4700000 });
       assert.fail('Expected revert not received');
     } catch (error) {
       const revertFound = error.message.search('revert') >= 0;
@@ -202,7 +201,7 @@ contract('tokenMatch.js', accounts => {
     const order2 = await helper.generateTokenOrder(helper.ether(0.7), helper.ether(0.7), helper.ether(0.01),
       0x0000002, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address);
     Array.prototype.push.apply(inputs, order2);
-    await joyso.matchTokenOrderByAdmin(inputs, { from: admin });
+    await joyso.matchTokenOrderByAdmin_k44j(inputs, { from: admin });
 
     const order3 = await helper.generateTokenOrder(helper.ether(0.1), helper.ether(0.1), helper.ether(0.01),
       0x0000001, 20, 10, 0, ORDER_ISBUY, ETHER, token.address, user1, joyso.address);
@@ -211,13 +210,13 @@ contract('tokenMatch.js', accounts => {
     Array.prototype.push.apply(inputs, order2);
 
     try {
-      await joyso.matchTokenOrderByAdmin(inputs);
+      await joyso.matchTokenOrderByAdmin_k44j(inputs);
       assert.fail('Expected revert not received');
     } catch (error) {
     }
   });
 
-  it("it should fail if the price taker's price is worse than maker's", async () => {   
+  it("it should fail if the price taker's price is worse than maker's", async () => {
     const temp = await helper.setupEnvironment();
     const joyso = await Joyso.at(temp[0]);
     const token = await TestToken.at(temp[1]);
@@ -232,7 +231,7 @@ contract('tokenMatch.js', accounts => {
     Array.prototype.push.apply(inputs, order2);
 
     try {
-      await joyso.matchTokenOrderByAdmin(inputs, { from: admin, gas: 4700000 });
+      await joyso.matchTokenOrderByAdmin_k44j(inputs, { from: admin, gas: 4700000 });
       assert.fail('Expected revert not received');
     } catch (error) {
       const revertFound = error.message.search('revert') >= 0;

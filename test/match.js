@@ -33,7 +33,7 @@ contract('match.js', accounts => {
     const user2TokenBalance = await joyso.getBalance(token.address, user2);
     const joysoEtherBalance = await joyso.getBalance(ETHER, joysoWallet);
 
-    await joyso.matchByAdmin(inputs, { from: admin, gas: 4700000 });
+    await joyso.matchByAdmin_TwH36(inputs, { from: admin, gas: 4700000 });
 
     const user1EtherBalance2 = await joyso.getBalance(ETHER, user1);
     const user2EtherBalance2 = await joyso.getBalance(ETHER, user2);
@@ -69,7 +69,7 @@ contract('match.js', accounts => {
     const user3TokenBalance = await joyso.getBalance.call(token.address, user3);
     const joysoEtherBalance = await joyso.getBalance.call(ETHER, joysoWallet);
 
-    await joyso.matchByAdmin(inputs, { from: admin });
+    await joyso.matchByAdmin_TwH36(inputs, { from: admin });
 
     const user1EtherBalance2 = await joyso.getBalance.call(ETHER, user1);
     const user1TokenBalance2 = await joyso.getBalance.call(token.address, user1);
@@ -101,7 +101,7 @@ contract('match.js', accounts => {
     const order3 = await helper.generateOrder(helper.ether(0.000000000005), helper.ether(0.000075), helper.ether(0.000001), 0x5a41e7e0, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address);
     Array.prototype.push.apply(inputs, order3);
 
-    await joyso.matchByAdmin(inputs, { from: admin });
+    await joyso.matchByAdmin_TwH36(inputs, { from: admin });
 
     const user1EtherBalance = await joyso.getBalance.call(ETHER, user1);
     const user1TokenBalance = await joyso.getBalance.call(token.address, user1);
@@ -126,10 +126,10 @@ contract('match.js', accounts => {
     const order2 = await helper.generateOrder(150, 15000000000, 1000000000000, 11, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address);
     Array.prototype.push.apply(inputs, order2);
 
-    await joyso.matchByAdmin(inputs, { from: admin });
+    await joyso.matchByAdmin_TwH36(inputs, { from: admin });
 
     try {
-      await joyso.matchByAdmin(inputs, { from: admin });
+      await joyso.matchByAdmin_TwH36(inputs, { from: admin });
       assert.fail('Expected revert not received');
     } catch (error) {
       const revertFound = error.message.search('revert') >= 0;
@@ -150,10 +150,10 @@ contract('match.js', accounts => {
     let order2 = await helper.generateOrder(10000000, 20000000000000000, 15000000, 11, 10, 5, 0x3e801, 0, token.address, ETHER, user2, joyso.address);
     Array.prototype.push.apply(inputs, order2);
 
-    await joyso.matchByAdmin(inputs, { from: admin });
+    await joyso.matchByAdmin_TwH36(inputs, { from: admin });
 
     try {
-      await joyso.matchByAdmin(inputs, { from: admin });
+      await joyso.matchByAdmin_TwH36(inputs, { from: admin });
       assert.fail('Expected revert not received');
     } catch (error) {
       const revertFound = error.message.search('revert') >= 0;
@@ -172,10 +172,10 @@ contract('match.js', accounts => {
     const order2 = await helper.generateOrder(10000000, 10000000000000000, 15000000, 11, 10, 5, 0x3e80, 0, token.address, ETHER, user1, joyso.address);
     Array.prototype.push.apply(inputs, order2);
 
-    await joyso.matchByAdmin(inputs, { from: admin });
+    await joyso.matchByAdmin_TwH36(inputs, { from: admin });
 
     try {
-      await joyso.matchByAdmin(inputs, { from: admin });
+      await joyso.matchByAdmin_TwH36(inputs, { from: admin });
       assert.fail('Expected revert not received');
     } catch (error) {
       const revertFound = error.message.search('revert') >= 0;
@@ -206,7 +206,7 @@ contract('match.js', accounts => {
     const joysoEtherBalance = await joyso.getBalance(ETHER, joysoWallet);
     const joysoJoyBalance = await joyso.getBalance(joy.address, joysoWallet);
 
-    await joyso.matchByAdmin(inputs, { from: admin, gas: 4700000 });
+    await joyso.matchByAdmin_TwH36(inputs, { from: admin, gas: 4700000 });
 
     const user1EtherBalance2 = await joyso.getBalance(ETHER, user1);
     const user2EtherBalance2 = await joyso.getBalance(ETHER, user2);
@@ -242,7 +242,7 @@ contract('match.js', accounts => {
     const user2TokenBalance = await joyso.getBalance.call(token.address, user2);
     const joysoEtherBalance = await joyso.getBalance.call(ETHER, joysoWallet);
 
-    await joyso.matchByAdmin(inputs, { from: admin });
+    await joyso.matchByAdmin_TwH36(inputs, { from: admin });
 
     const user1EtherBalance2 = await joyso.getBalance.call(ETHER, user1);
     const user1TokenBalance2 = await joyso.getBalance.call(token.address, user1);
@@ -263,7 +263,7 @@ contract('match.js', accounts => {
     Array.prototype.push.apply(inputs, order3);
     Array.prototype.push.apply(inputs, order2);
 
-    await joyso.matchByAdmin(inputs, { from: admin });
+    await joyso.matchByAdmin_TwH36(inputs, { from: admin });
 
     const user2EtherBalance3 = await joyso.getBalance(ETHER, user2);
     const user2TokenBalance3 = await joyso.getBalance(token.address, user2);
@@ -298,7 +298,7 @@ contract('match.js', accounts => {
     const joysoEtherBalance = await joyso.getBalance.call(ETHER, joysoWallet);
     const joysoJoyBalance = await joyso.getBalance.call(joy.address, joysoWallet);
 
-    await joyso.matchByAdmin(inputs, { from: admin });
+    await joyso.matchByAdmin_TwH36(inputs, { from: admin });
 
     const user1EtherBalance2 = await joyso.getBalance.call(ETHER, user1);
     const user1TokenBalance2 = await joyso.getBalance.call(token.address, user1);
@@ -323,7 +323,7 @@ contract('match.js', accounts => {
     Array.prototype.push.apply(inputs, order3);
     Array.prototype.push.apply(inputs, order2);
 
-    await joyso.matchByAdmin(inputs, { from: admin });
+    await joyso.matchByAdmin_TwH36(inputs, { from: admin });
 
     const user2EtherBalance3 = await joyso.getBalance(ETHER, user2);
     const user2TokenBalance3 = await joyso.getBalance(token.address, user2);
@@ -358,7 +358,7 @@ contract('match.js', accounts => {
     Array.prototype.push.apply(inputs, order2);
 
     try {
-      await joyso.matchByAdmin(inputs, { from: admin, gas: 4700000 });
+      await joyso.matchByAdmin_TwH36(inputs, { from: admin, gas: 4700000 });
       assert.fail('Expected revert not received');
     } catch (error) {
       const revertFound = error.message.search('revert') >= 0;
@@ -382,7 +382,7 @@ contract('match.js', accounts => {
     inputs[11] = 1234; // s
 
     try {
-      await joyso.matchByAdmin(inputs, { from: admin, gas: 4700000 });
+      await joyso.matchByAdmin_TwH36(inputs, { from: admin, gas: 4700000 });
       assert.fail('Expected revert not received');
     } catch (error) {
       const revertFound = error.message.search('revert') >= 0;
@@ -405,7 +405,7 @@ contract('match.js', accounts => {
     Array.prototype.push.apply(inputs, order2);
 
     try {
-      await joyso.matchByAdmin(inputs, { from: admin, gas: 4700000 });
+      await joyso.matchByAdmin_TwH36(inputs, { from: admin, gas: 4700000 });
       assert.fail('Expected revert not received');
     } catch (error) {
       const revertFound = error.message.search('revert') >= 0;
@@ -424,13 +424,13 @@ contract('match.js', accounts => {
     const order2 = await helper.generateOrder(helper.ether(0.000000000001), helper.ether(0.00001), helper.ether(0.000001), 0x5a41e7ba, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address);
     Array.prototype.push.apply(inputs, order2);
 
-    await joyso.matchByAdmin(inputs, { from: admin });
+    await joyso.matchByAdmin_TwH36(inputs, { from: admin });
 
     const order3 = await helper.generateOrder(helper.ether(0.000000000005), helper.ether(0.000075), helper.ether(0.000001), 0x5a41e7e0, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address);
     inputs = [];
     Array.prototype.push.apply(inputs, order1);
     Array.prototype.push.apply(inputs, order3);
-    await joyso.matchByAdmin(inputs, { from: admin });
+    await joyso.matchByAdmin_TwH36(inputs, { from: admin });
 
     const user1EtherBalance = await joyso.getBalance.call(ETHER, user1);
     const user1TokenBalance = await joyso.getBalance.call(token.address, user1);

@@ -158,7 +158,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         data [23..23] (uint256) paymentMethod
         data [24..63] (address) tokenAddress
     */
-    function withdrawByAdmin (uint256[] inputs) external onlyAdmin {
+    function withdrawByAdmin_Unau (uint256[] inputs) external onlyAdmin {
         uint256 v256 = retrieveV(inputs[2]);
         uint256 paymentMethod = decodeWithdrawPaymentMethod(inputs[2]);
         address token = tokenId2Address[decodeWithdrawTokenId(inputs[2])];
@@ -222,7 +222,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         data [23..23] (uint256) isBuy --> always 0, should be modified in contract
         data [24..63] (address) tokenAddress
     */
-    function matchByAdmin (uint256[] inputs) external onlyAdmin {
+    function matchByAdmin_TwH36 (uint256[] inputs) external onlyAdmin {
         uint256 tokenId;
         uint256 isBuy;
         (tokenId, isBuy) = decodeOrderTokenIdAndIsBuy(inputs[3]);
@@ -312,7 +312,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         data [23..23] (uint256) isBuy
         data [24..63] (address) tokenAddress
     */
-    function matchTokenOrderByAdmin (uint256[] inputs) external onlyAdmin {
+    function matchTokenOrderByAdmin_k44j (uint256[] inputs) external onlyAdmin {
         uint256 tokenId;
         uint256 baseId;
         uint256 isBuy;

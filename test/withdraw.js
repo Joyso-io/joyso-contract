@@ -21,7 +21,7 @@ contract('joyso withdraw', accounts => {
     const user1AccountTokenBalance = await token.balanceOf(user1);
 
     const inputs = await helper.generateWithdraw(helper.ether(0.5), helper.ether(0.02), 0, token.address, user1, joyso.address);
-    await joyso.withdrawByAdmin(inputs, { from: admin });
+    await joyso.withdrawByAdmin_Unau(inputs, { from: admin });
 
     const user1EtherBalanceAfter = await joyso.getBalance(ETHER, user1);
     const joysoEtherBalanceAfter = await joyso.getBalance(ETHER, joysoWallet);
@@ -45,7 +45,7 @@ contract('joyso withdraw', accounts => {
     const user1AccountTokenBalance = await joy.balanceOf(user1);
 
     const inputs = await helper.generateWithdraw(helper.ether(0.5), helper.ether(0.02), 0, joy.address, user1, joyso.address);
-    await joyso.withdrawByAdmin(inputs, { from: admin });
+    await joyso.withdrawByAdmin_Unau(inputs, { from: admin });
 
     const user1EtherBalanceAfter = await joyso.getBalance(ETHER, user1);
     const joysoEtherBalanceAfter = await joyso.getBalance(ETHER, joysoWallet);
@@ -67,7 +67,7 @@ contract('joyso withdraw', accounts => {
     const user1AccountEtherBalance = await web3.eth.getBalance(user1);
 
     const inputs = await helper.generateWithdraw(helper.ether(0.5), helper.ether(0.02), 0, ETHER, user1, joyso.address);
-    await joyso.withdrawByAdmin(inputs, { from: admin });
+    await joyso.withdrawByAdmin_Unau(inputs, { from: admin });
 
     const user1EtherBalanceAfter = await joyso.getBalance(ETHER, user1);
     const joysoEtherBalanceAfter = await joyso.getBalance(ETHER, joysoWallet);
@@ -90,7 +90,7 @@ contract('joyso withdraw', accounts => {
     const user1AccountTokenBalance = await token.balanceOf(user1);
 
     const inputs = await helper.generateWithdraw(helper.ether(0.5), helper.ether(0.02), 1, token.address, user1, joyso.address);
-    await joyso.withdrawByAdmin(inputs, { from: admin });
+    await joyso.withdrawByAdmin_Unau(inputs, { from: admin });
 
     const user1TokenBalanceAfter = await joyso.getBalance(token.address, user1);
     const user1JoyBalanceAfter = await joyso.getBalance(joy.address, user1);
@@ -109,7 +109,7 @@ contract('joyso withdraw', accounts => {
     const joy = await TestToken.at(temp[2]);
 
     const inputs = await helper.generateWithdraw(430743357366569795, 2000000000000000, 1, joy.address, user1, joyso.address);
-    await joyso.withdrawByAdmin(inputs, { from: admin });
+    await joyso.withdrawByAdmin_Unau(inputs, { from: admin });
   });
 
   it('withdraw ether, pay by JOY', async () => {
@@ -118,7 +118,7 @@ contract('joyso withdraw', accounts => {
 
     const user1AccountEtherBalanceOriginal = await web3.eth.getBalance(user1);
     const inputs = await helper.generateWithdraw(helper.ether(0.5), 2000000000000000, 1, ETHER, user1, joyso.address);
-    await joyso.withdrawByAdmin(inputs, { from: admin });
+    await joyso.withdrawByAdmin_Unau(inputs, { from: admin });
 
     const user1EtherBalance = await joyso.getBalance(ETHER, user1);
     const user1AccountEtherBalance = await web3.eth.getBalance(user1);
@@ -136,7 +136,7 @@ contract('joyso withdraw', accounts => {
     const joysoTokenBalance = await joyso.getBalance(token.address, joysoWallet);
 
     const inputs = await helper.generateWithdraw(helper.ether(0.5), helper.ether(0.02), 2, token.address, user1, joyso.address);
-    await joyso.withdrawByAdmin(inputs, { from: admin });
+    await joyso.withdrawByAdmin_Unau(inputs, { from: admin });
 
     const user1TokenBalanceAfter = await joyso.getBalance(token.address, user1);
     const user1AccountTokenBalanceAfter = await token.balanceOf(user1);
@@ -153,10 +153,10 @@ contract('joyso withdraw', accounts => {
     const joy = await TestToken.at(temp[2]);
 
     const inputs = await helper.generateWithdraw(430743357366569795, 2000000000000000, 1, joy.address, user1, joyso.address);
-    await joyso.withdrawByAdmin(inputs, { from: admin });
+    await joyso.withdrawByAdmin_Unau(inputs, { from: admin });
 
     try {
-      await joyso.withdrawByAdmin(inputs, { from: admin });
+      await joyso.withdrawByAdmin_Unau(inputs, { from: admin });
       assert.fail('Expected revert not received');
     } catch (error) {
       const revertFound = error.message.search('revert') >= 0;
@@ -173,7 +173,7 @@ contract('joyso withdraw', accounts => {
     inputs[4] = 12345; // s
 
     try {
-      await joyso.withdrawByAdmin(inputs, { from: admin });
+      await joyso.withdrawByAdmin_Unau(inputs, { from: admin });
       assert.fail('Expected revert not received');
     } catch (error) {
       const revertFound = error.message.search('revert') >= 0;
@@ -189,7 +189,7 @@ contract('joyso withdraw', accounts => {
     const inputs = await helper.generateWithdraw(helper.ether(2), helper.ether(0.02), 0, token.address, user1, joyso.address);
 
     try {
-      await joyso.withdrawByAdmin(inputs, { from: admin });
+      await joyso.withdrawByAdmin_Unau(inputs, { from: admin });
       assert.fail('Expected revert not received');
     } catch (error) {
       const revertFound = error.message.search('revert') >= 0;
@@ -205,7 +205,7 @@ contract('joyso withdraw', accounts => {
     const inputs = await helper.generateWithdraw(helper.ether(0.5), helper.ether(2), 0, token.address, user1, joyso.address);
 
     try {
-      await joyso.withdrawByAdmin(inputs, { from: admin });
+      await joyso.withdrawByAdmin_Unau(inputs, { from: admin });
       assert.fail('Expected revert not received');
     } catch (error) {
       const revertFound = error.message.search('revert') >= 0;
