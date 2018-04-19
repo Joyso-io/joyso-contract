@@ -1,8 +1,8 @@
 'use strict';
 
 const Joyso = artifacts.require('./Joyso.sol');
-const JoysoMock = artifacts.require('./JoysoMock.sol');
-const TestToken = artifacts.require('./TestToken.sol');
+const JoysoMock = artifacts.require('./testing/JoysoMock.sol');
+const TestToken = artifacts.require('./testing/TestToken.sol');
 const web3Utils = require('web3-utils');
 const _ = require('lodash');
 

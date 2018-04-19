@@ -1,8 +1,8 @@
 'use strict';
 
 const Joyso = artifacts.require('./Joyso.sol');
-const TestToken = artifacts.require('./TestToken.sol');
-const helper = require('./helper.js');
+const TestToken = artifacts.require('./testing/TestToken.sol');
+const helper = require('./support/helper.js');
 
 contract('gas analysis', accounts => {
   const admin = accounts[0];
@@ -15,10 +15,6 @@ contract('gas analysis', accounts => {
     const temp = await helper.setupEnvironment();
     const joyso = await Joyso.at(temp[0]);
     const token = await TestToken.at(temp[1]);
-
-    for (let i = 0; i < 50; i++) {
-      await joyso.increaseQueue.sendTransaction({ from: admin, gas: 4700000 });
-    }
 
     let inputs = [];
     let order1 = await helper.generateOrder(helper.ether(0.005), helper.ether(0.005), helper.ether(0.001),

@@ -1,15 +1,6 @@
 pragma solidity 0.4.19;
 
-
-interface TToken {
-    function balanceOf(address who) public view returns (uint256);
-    function transfer(address to, uint256 value) public returns (bool);
-    event Transfer(address indexed from, address indexed to, uint256 value);
-    function allowance(address owner, address spender) public view returns (uint256);
-    function transferFrom(address from, address to, uint256 value) public returns (bool);
-    function approve(address spender, uint256 value) public returns (bool);
-    event Approval(address indexed owner, address indexed spender, uint256 value);
-}
+import "../../node_modules/zeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
 
 contract TestMigrate {
@@ -27,7 +18,7 @@ contract TestMigrate {
         if (tokenAddr == address(0)) {
             require(sum == msg.value);
         } else {
-            require(TToken(tokenAddr).transferFrom(msg.sender, this, sum));
+            require(ERC20(tokenAddr).transferFrom(msg.sender, this, sum));
         }
 
         return true;
@@ -37,14 +28,14 @@ contract TestMigrate {
         if (tokenAddr == address(0)) {
             require(amount == msg.value);
         } else {
-            require(TToken(tokenAddr).transferFrom(msg.sender, this, amount));
+            require(ERC20(tokenAddr).transferFrom(msg.sender, this, amount));
         }
 
         balances[tokenAddr][user] += amount;
         return true;
     }
 
-    function getBalance (address token, address account) external view returns (uint256) {
+    function getBalance(address token, address account) external view returns (uint256) {
         return balances[token][account];
     }
 }

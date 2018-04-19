@@ -1,9 +1,9 @@
 'use strict';
 
 const Joyso = artifacts.require('./Joyso.sol');
-const TestToken = artifacts.require('./TestToken.sol');
-const TestMigrate = artifacts.require('./TestMigrate.sol');
-const helper = require('./helper.js');
+const TestToken = artifacts.require('./testing/TestToken.sol');
+const TestMigrate = artifacts.require('./testing/TestMigrate.sol');
+const helper = require('./support/helper.js');
 
 contract('test migrate.js', accounts => {
   const admin = accounts[0];

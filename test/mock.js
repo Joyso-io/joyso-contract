@@ -1,8 +1,8 @@
 'use strict';
 
 const Joyso = artifacts.require('./JoysoMock.sol');
-const TestToken = artifacts.require('./TestToken.sol');
-const helper = require('./helper.js');
+const TestToken = artifacts.require('./testing/TestToken.sol');
+const helper = require('./support/helper.js');
 
 contract('Joyso mock', accounts => {
   const user1 = accounts[1];

@@ -1,5 +1,6 @@
 pragma solidity 0.4.19;
-import "./Joyso.sol";
+
+import "../Joyso.sol";
 
 
 contract JoysoMock is Joyso {
@@ -9,11 +10,11 @@ contract JoysoMock is Joyso {
         _time = 10;
     }
 
-    function getTime () public view returns (uint256) {
+    function getTime() public view returns (uint256) {
         return _time;
     }
 
-    function setTime (uint256 _t) public {
+    function setTime(uint256 _t) public {
         _time = _t;
     }
 }
