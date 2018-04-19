@@ -1,15 +1,10 @@
 pragma solidity 0.4.19;
 
 import "../node_modules/zeppelin-solidity/contracts/ownership/Ownable.sol";
-import {ERC20 as Token} from "../node_modules/zeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import "../node_modules/zeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./libs/SafeMath.sol";
+import "./Migratable.sol";
 import "./JoysoDataDecoder.sol";
-
-
-contract TTestMigrate {
-    function migrate(address[2] users, uint256[2] amounts, address tokenAddr, uint256 totalAmount) public payable returns (bool);
-    function migrateSingle(address user, uint256 amount, address tokenAddr) public payable returns (bool);
-}
 
 
 contract Joyso is Ownable, JoysoDataDecoder {
@@ -32,7 +27,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
 
     address public joysoWallet;
     address public joyToken;
-    uint256 public lockPeriod = 10 days;
+    uint256 public lockPeriod = 30 days;
     uint256 public userCount;
 
     modifier onlyAdmin {
@@ -66,7 +61,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
     function depositToken(address token, uint256 amount) external {
         require(tokenAddress2Id[token] != 0);
         addUser(msg.sender);
-        require(Token(token).transferFrom(msg.sender, this, amount));
+        require(ERC20(token).transferFrom(msg.sender, this, amount));
         balances[token][msg.sender] = balances[token][msg.sender].add(amount);
         Deposit(token, msg.sender, amount, balances[token][msg.sender]);
     }
@@ -83,7 +78,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         if (token == 0) {
             msg.sender.transfer(amount);
         } else {
-            require(Token(token).transfer(msg.sender, amount));
+            require(ERC20(token).transfer(msg.sender, amount));
         }
         Withdraw(token, msg.sender, amount, balances[token][msg.sender]);
     }
@@ -111,7 +106,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
     }
 
     function changeLockPeriod(uint256 _periodInDays) external onlyOwner {
-        require(_periodInDays * 1 days < lockPeriod);
+        require(_periodInDays * 1 days < 30 * 1 days && _periodInDays >= 1 * 1 days);
         lockPeriod = _periodInDays * 1 days;
     }
 
@@ -175,7 +170,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         if (token == 0) {
             user.transfer(inputs[0]);
         } else {
-            require(Token(token).transfer(user, inputs[0]));
+            require(ERC20(token).transfer(user, inputs[0]));
         }
     }
 
@@ -414,7 +409,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         data [23..23] (uint256) paymentMethod
         data [24..63] (address) tokenAddress
         */
-    function migrate(uint256[] inputs) external onlyAdmin {
+    function migrateByAdmin(uint256[] inputs) external onlyAdmin {
         address token = tokenId2Address[decodeWithdrawTokenId(inputs[2])];
         for (uint256 i = 0; i < inputs.length / 4; i++) {
             address user = userId2Address[decodeWithdrawUserId(inputs[4 * i + 2])];
@@ -446,10 +441,10 @@ contract Joyso is Ownable, JoysoDataDecoder {
             uint256 amount = balances[token][user];
             balances[token][user] = 0;
             if (token == 0) {
-                TTestMigrate(address(inputs[0])).migrateSingle.value(amount)(user, amount, token);
+                Migratable(address(inputs[0])).migrate.value(amount)(user, amount, token);
             } else {
-                Token(token).approve(address(inputs[0]), amount);
-                TTestMigrate(address(inputs[0])).migrateSingle(user, amount, token);
+                ERC20(token).approve(address(inputs[0]), amount);
+                Migratable(address(inputs[0])).migrate(user, amount, token);
             }
         }
     }
