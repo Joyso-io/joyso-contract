@@ -271,9 +271,7 @@ module.exports = {
     const userId = await joyso.userAddress2Id.call(user);
     const inputDataWithoutV = genOrderInputDataWithoutV(nonce, takerFee, makerFee, joyPrice, 0,
       tokenSellId, tokenBuyId, userId);
-    // var letUserSignData = await joyso.genUserSignedOrderData.call(inputDataWithoutV, isBuy, token)
     const letUserSignData = genOrderDataInUserSigned(inputDataWithoutV, isBuy, token);
-    // var userShouldSignIt = await joyso.getOrderDataHash.call(amountSell, amountBuy, gasFee, letUserSignData)
     const userShouldSignIt = await web3Utils.soliditySha3({ type: 'address', value: joyso.address },
       amountSell,
       amountBuy,

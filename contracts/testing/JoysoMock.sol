@@ -4,17 +4,17 @@ import "../Joyso.sol";
 
 
 contract JoysoMock is Joyso {
-    uint256 public _time;
+    uint256 public time;
 
     function JoysoMock(address _joysoWallet, address _joyToken) public Joyso(_joysoWallet, _joyToken) {
-        _time = 10;
+        time = 10;
     }
 
-    function getTime() public view returns (uint256) {
-        return _time;
+    function getTime() internal view returns (uint256) {
+        return time;
     }
 
     function setTime(uint256 _t) public {
-        _time = _t;
+        time = _t;
     }
 }

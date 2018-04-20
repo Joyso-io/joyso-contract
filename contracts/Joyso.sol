@@ -14,7 +14,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
     uint256 internal constant PAY_BY_JOY = 0x0000000000000000000000010000000000000000000000000000000000000000;
     uint256 internal constant ORDER_ISBUY = 0x0000000000000000000000010000000000000000000000000000000000000000;
 
-    mapping (address => mapping (address => uint256)) public balances;
+    mapping (address => mapping (address => uint256)) private balances;
     mapping (address => uint256) public userLock;
     mapping (address => uint256) public userNonce;
     mapping (bytes32 => uint256) public orderFills;
@@ -454,7 +454,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
     }
 
     // -------------------------------------------- helper functions
-    function getTime() public view returns (uint256) {
+    function getTime() internal view returns (uint256) {
         return now;
     }
 
@@ -476,7 +476,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         uint256 isBuy,
         uint256 tokenId
     )
-        public view returns (bytes32)
+        internal view returns (bytes32)
     {
         uint256 amountSell = inputs[offset + 0];
         uint256 amountBuy = inputs[offset + 1];
@@ -485,7 +485,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         return keccak256(this, amountSell, amountBuy, gasFee, data);
     }
 
-    function getTokenOrderDataHash(uint256[] inputs, uint256 offset) public view returns (bytes32) {
+    function getTokenOrderDataHash(uint256[] inputs, uint256 offset) internal view returns (bytes32) {
         uint256 amountSell = inputs[offset + 0];
         uint256 amountBuy = inputs[offset + 1];
         uint256 gasFee = inputs[offset + 2];
@@ -499,7 +499,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         return keccak256(this, amountSell, amountBuy, gasFee, data, baseToken, joyPrice);
     }
 
-    function verify(bytes32 hash, address sender, uint8 v, bytes32 r, bytes32 s) public pure returns (bool) {
+    function verify(bytes32 hash, address sender, uint8 v, bytes32 r, bytes32 s) internal pure returns (bool) {
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes32 prefixedHash = keccak256(prefix, hash);
         address signer = ecrecover(prefixedHash, v, r, s);

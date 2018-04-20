@@ -13,7 +13,7 @@ contract('Joyso mock', accounts => {
     const joyso = await Joyso.at(temp[0]);
 
     await joyso.lockMe({ from: user1 });
-    const currentTime = await joyso.getTime.call();
+    const currentTime = await joyso.time.call();
     const lockPeriod = await joyso.lockPeriod.call();
     await joyso.setTime(currentTime + lockPeriod + 1);
     const user1EtherBalance = await joyso.getBalance.call(ETHER, user1);
@@ -32,7 +32,7 @@ contract('Joyso mock', accounts => {
     const token = await TestToken.at(temp[1]);
 
     await joyso.lockMe({ from: user1 });
-    const currentTime = await joyso.getTime.call();
+    const currentTime = await joyso.time.call();
     const lockPeriod = await joyso.lockPeriod.call();
     await joyso.setTime(currentTime + lockPeriod + 1);
     const user1EtherAccountBalance = await web3.eth.getBalance(user1);
@@ -54,7 +54,7 @@ contract('Joyso mock', accounts => {
     const token = await TestToken.at(temp[1]);
 
     await joyso.lockMe({ from: user1 });
-    const currentTime = await joyso.getTime.call();
+    const currentTime = await joyso.time.call();
     const lockPeriod = await joyso.lockPeriod.call();
     await joyso.setTime(currentTime + lockPeriod / 2 + 1);
     await joyso.unlockMe({ from: user1 });
@@ -73,7 +73,7 @@ contract('Joyso mock', accounts => {
     const joyso = await Joyso.at(temp[0]);
 
     await joyso.lockMe({ from: user1 });
-    const currentTime = await joyso.getTime.call();
+    const currentTime = await joyso.time.call();
     const lockPeriod = await joyso.lockPeriod.call();
     await joyso.setTime(currentTime + lockPeriod + 1);
     try {
@@ -91,7 +91,7 @@ contract('Joyso mock', accounts => {
     const token = await TestToken.at(temp[1]);
 
     await joyso.lockMe({ from: user1 });
-    const currentTime = await joyso.getTime.call();
+    const currentTime = await joyso.time.call();
     const lockPeriod = await joyso.lockPeriod.call();
     await joyso.setTime(currentTime + lockPeriod + 1);
     try {
