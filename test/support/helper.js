@@ -75,7 +75,7 @@ const genOrderInputData = function (dataWithoutV, v) {
 
 module.exports = {
   generateCancel: async function (gasFee, nonce, paymentMethod, user, joysoAddress) {
-    let array = [];
+    const array = [];
     const joyso = await Joyso.at(joysoAddress);
     const userId = await joyso.userAddress2Id.call(user);
     let temp = '0x';
@@ -90,7 +90,7 @@ module.exports = {
     }
     temp += _.padStart('0', 40, '0');
 
-    const msg = await joyso.getCancelDataHash.call(gasFee, temp);
+    const msg = await web3Utils.soliditySha3({ type: 'address', value: joyso.address }, gasFee, temp);
     const sig = web3.eth.sign(user, msg).slice(2);
     const r = `0x${sig.slice(0, 64)}`;
     const s = `0x${sig.slice(64, 128)}`;
@@ -139,7 +139,11 @@ module.exports = {
 
     const temp = String(tokenAddress).substring(2, 44);
     data += _.padStart(temp, 40, '0');
-    const msg = await joyso.getWithdrawDataHash.call(amount, gasFee, data);
+    const msg = await web3Utils.soliditySha3({ type: 'address', value: joyso.address },
+      amount,
+      gasFee,
+      data
+    );
     const sig = web3.eth.sign(userAddress, msg).slice(2);
     const r = `0x${sig.slice(0, 64)}`;
     const s = `0x${sig.slice(64, 128)}`;
@@ -208,7 +212,11 @@ module.exports = {
 
     const temp = String(tokenAddress).substring(2, 44);
     data += _.padStart(temp, 40, '0');
-    const msg = await joyso.getMigrateDataHash.call(gasFee, data, newContractAddress);
+    const msg = await web3Utils.soliditySha3({ type: 'address', value: joyso.address },
+      gasFee,
+      data,
+      newContractAddress
+    );
     const sig = web3.eth.sign(userAddress, msg).slice(2);
     const r = `0x${sig.slice(0, 64)}`;
     const s = `0x${sig.slice(64, 128)}`;

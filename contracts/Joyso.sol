@@ -458,15 +458,15 @@ contract Joyso is Ownable, JoysoDataDecoder {
         return now;
     }
 
-    function getCancelDataHash(uint256 gasFee, uint256 data) public view returns (bytes32) {
+    function getCancelDataHash(uint256 gasFee, uint256 data) internal view returns (bytes32) {
         return keccak256(this, gasFee, data);
     }
 
-    function getWithdrawDataHash(uint256 amount, uint256 gas, uint256 data) public view returns (bytes32) {
+    function getWithdrawDataHash(uint256 amount, uint256 gas, uint256 data) internal view returns (bytes32) {
         return keccak256(this, amount, gas, data);
     }
 
-    function getMigrateDataHash(uint256 gas, uint256 data, address newContract) public view returns (bytes32) {
+    function getMigrateDataHash(uint256 gas, uint256 data, address newContract) internal view returns (bytes32) {
         return keccak256(this, gas, data, newContract);
     }
 
