@@ -387,8 +387,6 @@ contract Joyso is Ownable, JoysoDataDecoder {
         userNonce[user] = nonce;
     }
 
-    // NOTES: migrate and withdraw share the same signature structure,
-    //        should consider the security problem.
     /**
         inputs[0] (uint256) new contract address;
         inputs[i+1] (uint256) gasFee;
@@ -411,32 +409,34 @@ contract Joyso is Ownable, JoysoDataDecoder {
         */
     function migrateByAdmin(uint256[] inputs) external onlyAdmin {
         address token = tokenId2Address[decodeWithdrawTokenId(inputs[2])];
-        for (uint256 i = 0; i < inputs.length / 4; i++) {
-            address user = userId2Address[decodeWithdrawUserId(inputs[4 * i + 2])];
+        for (uint256 i = 1; i < inputs.length; i += 4) {
+            address user = userId2Address[decodeWithdrawUserId(inputs[i + 1])];
             bytes32 hash = getMigrateDataHash(
-                address(inputs[0]),
-                inputs[4 * i + 1],
-                genUserSignedWithdrawData(inputs[4 * i + 2], token)
+                inputs[i],
+                genUserSignedWithdrawData(inputs[i + 1], token),
+                address(inputs[0])
             );
             require(
                 verify(
                     hash,
                     user,
-                    uint8(retrieveV(inputs[4 * i + 2])),
-                    bytes32(inputs[4 * i + 3]),
-                    bytes32(inputs[4 * i + 4])
+                    uint8(retrieveV(inputs[i + 1])),
+                    bytes32(inputs[i + 2]),
+                    bytes32(inputs[i + 3])
                 )
             );
-            uint256 paymentMethod = decodeWithdrawPaymentMethod(inputs[4 * i + 2]);
-            if (paymentMethod == PAY_BY_JOY) {
-                balances[joyToken][user] = balances[joyToken][user].sub(inputs[4 * i + 1]);
-                balances[joyToken][joysoWallet] = balances[joyToken][joysoWallet].add(inputs[4 * i + 1]);
-            } else if (paymentMethod == PAY_BY_TOKEN) {
-                balances[token][user] = balances[token][user].sub(inputs[4 * i + 1]);
-                balances[token][joysoWallet] = balances[token][joysoWallet].add(inputs[4 * i + 1]);
-            } else {
-                balances[0][user] = balances[0][user].sub(inputs[4 * i + 1]);
-                balances[0][joysoWallet] = balances[0][joysoWallet].add(inputs[4 * i + 1]);
+            if (inputs[i] > 0) {
+                uint256 paymentMethod = decodeWithdrawPaymentMethod(inputs[i + 1]);
+                if (paymentMethod == PAY_BY_JOY) {
+                    balances[joyToken][user] = balances[joyToken][user].sub(inputs[i]);
+                    balances[joyToken][joysoWallet] = balances[joyToken][joysoWallet].add(inputs[i]);
+                } else if (paymentMethod == PAY_BY_TOKEN) {
+                    balances[token][user] = balances[token][user].sub(inputs[i]);
+                    balances[token][joysoWallet] = balances[token][joysoWallet].add(inputs[i]);
+                } else {
+                    balances[0][user] = balances[0][user].sub(inputs[i]);
+                    balances[0][joysoWallet] = balances[0][joysoWallet].add(inputs[i]);
+                }
             }
             uint256 amount = balances[token][user];
             balances[token][user] = 0;
@@ -466,8 +466,8 @@ contract Joyso is Ownable, JoysoDataDecoder {
         return keccak256(this, amount, gas, data);
     }
 
-    function getMigrateDataHash(address newContract, uint256 gas, uint256 data) public view returns (bytes32) {
-        return keccak256(this, newContract, gas, data);
+    function getMigrateDataHash(uint256 gas, uint256 data, address newContract) public view returns (bytes32) {
+        return keccak256(this, gas, data, newContract);
     }
 
     function getOrderDataHash(

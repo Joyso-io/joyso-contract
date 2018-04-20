@@ -56,6 +56,26 @@ contract('test migrate.js', accounts => {
     assert.equal(user1NcEthBalance1 - user1NcEthBalance0, helper.ether(1));
   });
 
+  it('token migrate, pay by free', async () => {
+    const temp = await helper.setupEnvironment();
+    const joyso = await Joyso.at(temp[0]);
+    const token = await TestToken.at(temp[1]);
+
+    const nc = await NewJoyso.new({ from: admin });
+
+    const inputs = [ nc.address ];
+    const user1Migrate = await helper.generateMigrate(helper.ether(0), 0, token.address, user1, joyso.address, nc.address);
+    Array.prototype.push.apply(inputs, user1Migrate);
+
+    const joysoWalletEth = await joyso.getBalance(0, joysoWallet);
+    const user1NcEthBalance0 = await nc.getBalance(token.address, user1);
+    await joyso.migrateByAdmin(inputs);
+    const user1NcEthBalance1 = await nc.getBalance(token.address, user1);
+    const joysoWalletEth2 = await joyso.getBalance(0, joysoWallet);
+    assert.equal(user1NcEthBalance1 - user1NcEthBalance0, helper.ether(1));
+    assert.equal(joysoWalletEth2 - joysoWalletEth, helper.ether(0));
+  });
+
   it('token migrate, pay by ether', async () => {
     const temp = await helper.setupEnvironment();
     const joyso = await Joyso.at(temp[0]);

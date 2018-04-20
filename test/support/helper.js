@@ -208,7 +208,7 @@ module.exports = {
 
     const temp = String(tokenAddress).substring(2, 44);
     data += _.padStart(temp, 40, '0');
-    const msg = await joyso.getMigrateDataHash.call(newContractAddress, gasFee, data);
+    const msg = await joyso.getMigrateDataHash.call(gasFee, data, newContractAddress);
     const sig = web3.eth.sign(userAddress, msg).slice(2);
     const r = `0x${sig.slice(0, 64)}`;
     const s = `0x${sig.slice(64, 128)}`;
