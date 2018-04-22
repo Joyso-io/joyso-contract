@@ -236,7 +236,6 @@ module.exports = {
             dataV[52..55] (uint256) tokenId
             dataV[56..63] (uint256) userId
         */
-
     const tokenId = await joyso.tokenAddress2Id.call(tokenAddress);
     const userId = await joyso.userAddress2Id.call(userAddress);
 
@@ -308,7 +307,6 @@ module.exports = {
     const inputDataWithoutV = genTokenOrderInputDataWithoutV(nonce, takerFee, makerFee, joyPrice, isBuy,
       tokenSellId, tokenBuyId, userId);
     const letUserSignData = genOrderDataInUserSigned(inputDataWithoutV, isBuy, token);
-    // var userShouldSignIt = await joyso.getOrderDataHash.call(amountSell, amountBuy, gasFee, letUserSignData)
     const userShouldSignIt = await web3Utils.soliditySha3({ type: 'address', value: joyso.address },
       amountSell,
       amountBuy,
@@ -395,6 +393,7 @@ module.exports = {
     array[2] = joy.address;
     return array;
   },
+
   setupEnvironment2: async function () {
     const joy = await TestToken.new('tt', 'tt', 18, { from: admin });
     const joyso = await Joyso.new(joysoWallet, joy.address, { from: admin });
