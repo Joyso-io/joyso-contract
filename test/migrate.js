@@ -34,7 +34,7 @@ contract('test migrate.js', accounts => {
     Array.prototype.push.apply(inputs, user1Migrate);
 
     const user1NcEthBalance0 = await nc.getBalance(0, user1);
-    await joyso.migrateByAdmin(inputs);
+    await joyso.migrateByAdmin_DQV(inputs);
     const user1NcEthBalance1 = await nc.getBalance(0, user1);
     assert.equal(user1NcEthBalance1 - user1NcEthBalance0, helper.ether(1 - 0.02));
   });
@@ -51,7 +51,7 @@ contract('test migrate.js', accounts => {
     Array.prototype.push.apply(inputs, user1Migrate);
 
     const user1NcEthBalance0 = await nc.getBalance(token.address, user1);
-    await joyso.migrateByAdmin(inputs);
+    await joyso.migrateByAdmin_DQV(inputs);
     const user1NcEthBalance1 = await nc.getBalance(token.address, user1);
     assert.equal(user1NcEthBalance1 - user1NcEthBalance0, helper.ether(1));
   });
@@ -69,7 +69,7 @@ contract('test migrate.js', accounts => {
 
     const joysoWalletEth = await joyso.getBalance(0, joysoWallet);
     const user1NcEthBalance0 = await nc.getBalance(token.address, user1);
-    await joyso.migrateByAdmin(inputs);
+    await joyso.migrateByAdmin_DQV(inputs);
     const user1NcEthBalance1 = await nc.getBalance(token.address, user1);
     const joysoWalletEth2 = await joyso.getBalance(0, joysoWallet);
     assert.equal(user1NcEthBalance1 - user1NcEthBalance0, helper.ether(1));
@@ -89,7 +89,7 @@ contract('test migrate.js', accounts => {
 
     const joysoWalletEth = await joyso.getBalance(0, joysoWallet);
     const user1NcEthBalance0 = await nc.getBalance(token.address, user1);
-    await joyso.migrateByAdmin(inputs);
+    await joyso.migrateByAdmin_DQV(inputs);
     const user1NcEthBalance1 = await nc.getBalance(token.address, user1);
     const joysoWalletEth2 = await joyso.getBalance(0, joysoWallet);
     assert.equal(user1NcEthBalance1 - user1NcEthBalance0, helper.ether(1));
@@ -110,7 +110,7 @@ contract('test migrate.js', accounts => {
 
     const joysoWalletEth = await joyso.getBalance(joy.address, joysoWallet);
     const user1NcEthBalance0 = await nc.getBalance(token.address, user1);
-    await joyso.migrateByAdmin(inputs);
+    await joyso.migrateByAdmin_DQV(inputs);
     const user1NcEthBalance1 = await nc.getBalance(token.address, user1);
     const joysoWalletEth2 = await joyso.getBalance(joy.address, joysoWallet);
     assert.equal(user1NcEthBalance1 - user1NcEthBalance0, helper.ether(1));
@@ -130,7 +130,7 @@ contract('test migrate.js', accounts => {
 
     const joysoWalletEth = await joyso.getBalance(token.address, joysoWallet);
     const user1NcEthBalance0 = await nc.getBalance(token.address, user1);
-    await joyso.migrateByAdmin(inputs);
+    await joyso.migrateByAdmin_DQV(inputs);
     const user1NcEthBalance1 = await nc.getBalance(token.address, user1);
     const joysoWalletEth2 = await joyso.getBalance(token.address, joysoWallet);
     assert.equal(user1NcEthBalance1 - user1NcEthBalance0, helper.ether(1 - 0.02));
@@ -147,7 +147,7 @@ contract('test migrate.js', accounts => {
     const user1Migrate = await helper.generateMigrate(helper.ether(0.02), 0, 0, user1, joyso.address, nc.address);
     Array.prototype.push.apply(inputs, user1Migrate);
 
-    let tx = await joyso.migrateByAdmin.sendTransaction(inputs, { from: admin });
+    let tx = await joyso.migrateByAdmin_DQV.sendTransaction(inputs, { from: admin });
     let txReceipt = await web3.eth.getTransactionReceipt(tx);
     console.log('1 user migrate cost: ', txReceipt.gasUsed);
 
@@ -156,7 +156,7 @@ contract('test migrate.js', accounts => {
     const user3Migrate = await helper.generateMigrate(helper.ether(0.02), 0, 0, user3, joyso.address, nc.address);
     Array.prototype.push.apply(inputs, user2Migrate);
     Array.prototype.push.apply(inputs, user3Migrate);
-    tx = await joyso.migrateByAdmin.sendTransaction(inputs, { from: admin });
+    tx = await joyso.migrateByAdmin_DQV.sendTransaction(inputs, { from: admin });
     txReceipt = await web3.eth.getTransactionReceipt(tx);
     console.log('2 users migrate cost: ', txReceipt.gasUsed);
   });

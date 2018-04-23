@@ -25,9 +25,6 @@ contract TestDecoder is JoysoDataDecoder {
     }
 
     function testDecodeOrderData () public {
-        var (tokenId, isBuy) = decodeOrderTokenIdAndIsBuy(ORDER_V);
-        Assert.equal(tokenId, 0x2, "tokenId should be 2");
-        Assert.equal(isBuy, ORDER_ISBUY, "this order is buy token");
         Assert.equal(decodeOrderNonce(ORDER_V), 0x0181bfeb, "the nonce should be 0x0181bfeb");
         Assert.equal(decodeOrderTakerFee(ORDER_V), 0x0014, "taker fee should be 0x0014");
         Assert.equal(decodeOrderMakerFee(ORDER_V), 0x000a, "maker fee should be 0x000a");

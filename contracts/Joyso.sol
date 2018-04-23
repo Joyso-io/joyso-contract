@@ -42,7 +42,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
     event Lock(address user, uint256 timeLock);
 
     // for debug
-    event TradeSuccess(address user, uint256 etherGet, uint256 tokenGet, uint256 isBuy, uint256 fee);
+    event TradeSuccess(address user, uint256 etherGet, uint256 tokenGet, bool isBuy, uint256 fee);
 
     function Joyso(address _joysoWallet, address _joyToken) public {
         joysoWallet = _joysoWallet;
@@ -221,7 +221,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         // check taker order nonce
         require(decodeOrderNonce(data) > userNonce[userId2Address[decodeOrderUserId(data)]]);
         address token;
-        uint256 isBuy;
+        bool isBuy;
         (token, isBuy) = decodeOrderTokenAndIsBuy(data);
         bytes32 orderHash = getOrderDataHash(inputs, 0, isBuy, token);
         require(
@@ -234,12 +234,12 @@ contract Joyso is Ownable, JoysoDataDecoder {
             )
         );
 
-        uint256 tokenExecute = isBuy == ORDER_ISBUY ? inputs[1] : inputs[0]; // taker order token execute
+        uint256 tokenExecute = isBuy ? inputs[1] : inputs[0]; // taker order token execute
         tokenExecute = tokenExecute.sub(orderFills[orderHash]);
         require(tokenExecute != 0); // the taker order should remain something to trade
         uint256 etherExecute = 0;  // taker order ether execute
 
-        isBuy = isBuy ^ ORDER_ISBUY;
+        isBuy = !isBuy;
         for (uint256 i = 6; i < inputs.length; i += 6) {
             //check price, maker price should lower than taker price
             require(tokenExecute > 0 && inputs[1].mul(inputs[i + 1]) <= inputs[0].mul(inputs[i]));
@@ -271,8 +271,8 @@ contract Joyso is Ownable, JoysoDataDecoder {
             );
         }
 
-        isBuy = isBuy ^ ORDER_ISBUY;
-        tokenExecute = isBuy == ORDER_ISBUY ? inputs[1].sub(tokenExecute) : inputs[0].sub(tokenExecute);
+        isBuy = !isBuy;
+        tokenExecute = isBuy ? inputs[1].sub(tokenExecute) : inputs[0].sub(tokenExecute);
         tokenExecute = tokenExecute.sub(orderFills[orderHash]);
         processTakerOrder(inputs[2], inputs[3], tokenExecute, etherExecute, isBuy, token, 0, orderHash);
     }
@@ -313,7 +313,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         require(decodeOrderNonce(data) > userNonce[userId2Address[decodeOrderUserId(data)]]);
         address token;
         address base;
-        uint256 isBuy;
+        bool isBuy;
         (token, base, isBuy) = decodeTokenOrderTokenAndIsBuy(data);
         bytes32 orderHash = getTokenOrderDataHash(inputs, 0);
         require(
@@ -325,12 +325,12 @@ contract Joyso is Ownable, JoysoDataDecoder {
                 bytes32(inputs[5])
             )
         );
-        uint256 tokenExecute = isBuy == ORDER_ISBUY ? inputs[1] : inputs[0]; // taker order token execute
+        uint256 tokenExecute = isBuy ? inputs[1] : inputs[0]; // taker order token execute
         tokenExecute = tokenExecute.sub(orderFills[orderHash]);
         require(tokenExecute != 0); // the taker order should remain something to trade
         uint256 baseExecute = 0;  // taker order ether execute
 
-        isBuy = isBuy ^ ORDER_ISBUY;
+        isBuy = !isBuy;
         for (uint256 i = 6; i < inputs.length; i += 6) {
             //check price, taker price should better than maker price
             require(tokenExecute > 0 && inputs[1].mul(inputs[i + 1]) <= inputs[0].mul(inputs[i]));
@@ -362,8 +362,8 @@ contract Joyso is Ownable, JoysoDataDecoder {
             );
         }
 
-        isBuy = isBuy ^ ORDER_ISBUY;
-        tokenExecute = isBuy == ORDER_ISBUY ? inputs[1].sub(tokenExecute) : inputs[0].sub(tokenExecute);
+        isBuy = !isBuy;
+        tokenExecute = isBuy ? inputs[1].sub(tokenExecute) : inputs[0].sub(tokenExecute);
         tokenExecute = tokenExecute.sub(orderFills[orderHash]);
         processTakerOrder(inputs[2], inputs[3], tokenExecute, baseExecute, isBuy, token, base, orderHash);
     }
@@ -424,7 +424,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         data [23..23] (uint256) paymentMethod
         data [24..63] (address) tokenAddress
         */
-    function migrateByAdmin(uint256[] inputs) external onlyAdmin {
+    function migrateByAdmin_DQV(uint256[] inputs) external onlyAdmin {
         address token = tokenId2Address[decodeWithdrawTokenId(inputs[2])];
         for (uint256 i = 1; i < inputs.length; i += 4) {
             address user = userId2Address[decodeWithdrawUserId(inputs[i + 1])];
@@ -473,18 +473,34 @@ contract Joyso is Ownable, JoysoDataDecoder {
     }
 
     // -------------------------------------------- internal/private function
-    function decodeOrderTokenAndIsBuy(uint256 data) internal returns (address token, uint256 isBuy) {
-        uint256 tokenId;
-        (tokenId, isBuy) = super.decodeOrderTokenIdAndIsBuy(data);
-        token = tokenId2Address[tokenId];
+
+    /**
+     * @dev get tokenId and check the order is a buy order or not
+     * @dev tokenId take 4 bytes
+     * @dev isBuy is true means this order is buying token
+     */
+    function decodeOrderTokenAndIsBuy(uint256 data) internal returns (address token, bool isBuy) {
+        uint256 tokenId = (data & 0x000000000000000000000000000000000000000000000000ffff000000000000) >> 48;
+        if (tokenId == 0) {
+            token = tokenId2Address[(data & 0x0000000000000000000000000000000000000000000000000000ffff00000000) >> 32];
+            isBuy = true;
+        } else {
+            token = tokenId2Address[tokenId];
+        }
     }
 
-    function decodeTokenOrderTokenAndIsBuy(uint256 data) internal returns (address token, address base, uint256 isBuy) {
-        uint256 tokenId;
-        uint256 baseId;
-        (tokenId, baseId, isBuy) = super.decodeTokenOrderTokenIdAndIsBuy(data);
-        token = tokenId2Address[tokenId];
-        base = tokenId2Address[baseId];
+    /**
+     * @dev decode token base Match
+     */
+    function decodeTokenOrderTokenAndIsBuy(uint256 data) internal returns (address token, address base, bool isBuy) {
+        isBuy = data & 0x00000000000000000000000f0000000000000000000000000000000000000000 == ORDER_ISBUY;
+        if (isBuy) {
+            token = tokenId2Address[(data & 0x0000000000000000000000000000000000000000000000000000ffff00000000) >> 32];
+            base = tokenId2Address[(data & 0x000000000000000000000000000000000000000000000000ffff000000000000) >> 48];
+        } else {
+            token = tokenId2Address[(data & 0x000000000000000000000000000000000000000000000000ffff000000000000) >> 48];
+            base = tokenId2Address[(data & 0x0000000000000000000000000000000000000000000000000000ffff00000000) >> 32];
+        }
     }
 
     function getTime() internal view returns (uint256) {
@@ -494,7 +510,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
     function getOrderDataHash(
         uint256[] inputs,
         uint256 offset,
-        uint256 isBuy,
+        bool isBuy,
         address token
     )
         internal view returns (bytes32)
@@ -510,7 +526,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         uint256 amountSell = inputs[offset + 0];
         uint256 amountBuy = inputs[offset + 1];
         uint256 gasFee = inputs[offset + 2];
-        uint256 isBuy;
+        bool isBuy;
         address token;
         address base;
         (token, base, isBuy) = decodeTokenOrderTokenAndIsBuy(inputs[offset + 3]);
@@ -541,7 +557,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         uint256 data,
         uint256 tokenExecute,
         uint256 baseExecute,
-        uint256 isBuy,
+        bool isBuy,
         address token,
         address base,
         bytes32 orderHash
@@ -561,7 +577,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         uint256 data,
         uint256 _remainingToken,
         uint256 _baseExecute,
-        uint256 isBuy,
+        bool isBuy,
         address token,
         address base,
         bytes32 orderHash
@@ -573,12 +589,8 @@ contract Joyso is Ownable, JoysoDataDecoder {
         uint256 fee = calculateFee(gasFee, data, baseGet, orderHash, false, base != address(0));
         updateUserBalance(data, isBuy, baseGet, tokenGet, fee, token, base);
         orderFills[orderHash] = orderFills[orderHash].add(tokenGet);
-        (remainingToken, baseExecute) = updateTradeAmount(
-            _remainingToken,
-            _baseExecute,
-            baseGet,
-            tokenGet
-        );
+        remainingToken = _remainingToken.sub(tokenGet);
+        baseExecute = _baseExecute.add(baseGet);
         TradeSuccess(
             userId2Address[decodeOrderUserId(data)],
             baseGet,
@@ -602,7 +614,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
 
     function updateUserBalance(
         uint256 data,
-        uint256 isBuy,
+        bool isBuy,
         uint256 baseGet,
         uint256 tokenGet,
         uint256 fee,
@@ -620,7 +632,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
             baseFee = 0;
         }
 
-        if (isBuy == ORDER_ISBUY) { // buy token, sell ether
+        if (isBuy) { // buy token, sell ether
             balances[base][user] = balances[base][user].sub(baseGet).sub(baseFee);
             balances[token][user] = balances[token][user].add(tokenGet);
         } else {
@@ -662,24 +674,24 @@ contract Joyso is Ownable, JoysoDataDecoder {
     function calculateBaseGet(
         uint256 amountSell,
         uint256 amountBuy,
-        uint256 isBuy,
+        bool isBuy,
         uint256 tokenGet
     )
         internal pure returns (uint256)
     {
-        return isBuy == ORDER_ISBUY ? tokenGet.mul(amountSell) / amountBuy : tokenGet.mul(amountBuy) / amountSell;
+        return isBuy ? tokenGet.mul(amountSell) / amountBuy : tokenGet.mul(amountBuy) / amountSell;
     }
 
     function calculateTokenGet(
         uint256 amountSell,
         uint256 amountBuy,
         uint256 remainingToken,
-        uint256 isBuy,
+        bool isBuy,
         bytes32 orderHash
     )
         internal view returns (uint256)
     {
-        uint256 makerRemainingToken = isBuy == ORDER_ISBUY ? amountBuy : amountSell;
+        uint256 makerRemainingToken = isBuy ? amountBuy : amountSell;
         makerRemainingToken = makerRemainingToken.sub(orderFills[orderHash]);
         require(makerRemainingToken > 0); // the maker order should remain something to trade
         return makerRemainingToken >= remainingToken ? remainingToken : makerRemainingToken;
