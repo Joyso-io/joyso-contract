@@ -138,16 +138,14 @@ contract('match.js', accounts => {
   });
 
   it('case5', async () => {
-    let joyso, token, joy;
-    let temp = await helper.setupEnvironment();
-    joyso = await Joyso.at(temp[0]);
-    token = await TestToken.at(temp[1]);
-    joy = await TestToken.at(temp[2]);
+    const temp = await helper.setupEnvironment();
+    const joyso = await Joyso.at(temp[0]);
+    const token = await TestToken.at(temp[1]);
 
-    let inputs = [];
-    let order1 = await helper.generateOrder(20000000000000000, 10000000, 1500000000000000, 10, 20, 10, 0, ORDER_ISBUY, ETHER, token.address, user1, joyso.address);
+    const inputs = [];
+    const order1 = await helper.generateOrder(20000000000000000, 10000000, 1500000000000000, 10, 20, 10, 0, ORDER_ISBUY, ETHER, token.address, user1, joyso.address);
     Array.prototype.push.apply(inputs, order1);
-    let order2 = await helper.generateOrder(10000000, 20000000000000000, 15000000, 11, 10, 5, 0x3e801, 0, token.address, ETHER, user2, joyso.address);
+    const order2 = await helper.generateOrder(10000000, 20000000000000000, 15000000, 11, 10, 5, 0x3e801, 0, token.address, ETHER, user2, joyso.address);
     Array.prototype.push.apply(inputs, order2);
 
     await joyso.matchByAdmin_TwH36(inputs, { from: admin });
