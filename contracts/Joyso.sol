@@ -239,8 +239,9 @@ contract Joyso is Ownable, JoysoDataDecoder {
     ///     data [24..63] (address) tokenAddress
     function matchByAdmin_TwH36(uint256[] inputs) external onlyAdmin {
         uint256 data = inputs[3];
+        address user = userId2Address[decodeOrderUserId(data)];
         // check taker order nonce
-        require(decodeOrderNonce(data) > userNonce[userId2Address[decodeOrderUserId(data)]]);
+        require(decodeOrderNonce(data) > userNonce[user]);
         address token;
         bool isBuy;
         (token, isBuy) = decodeOrderTokenAndIsBuy(data);
@@ -248,7 +249,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         require(
             verify(
                 orderHash,
-                userId2Address[decodeOrderUserId(data)],
+                user,
                 uint8(retrieveV(data)),
                 bytes32(inputs[4]),
                 bytes32(inputs[5])
@@ -266,13 +267,14 @@ contract Joyso is Ownable, JoysoDataDecoder {
             require(tokenExecute > 0 && inputs[1].mul(inputs[i + 1]) <= inputs[0].mul(inputs[i]));
 
             data = inputs[i + 3];
+            user = userId2Address[decodeOrderUserId(data)];
             // check maker order nonce
-            require(decodeOrderNonce(data) > userNonce[userId2Address[decodeOrderUserId(data)]]);
+            require(decodeOrderNonce(data) > userNonce[user]);
             bytes32 makerOrderHash = getOrderDataHash(inputs, i, isBuy, token);
             require(
                 verify(
                     makerOrderHash,
-                    userId2Address[decodeOrderUserId(data)],
+                    user,
                     uint8(retrieveV(data)),
                     bytes32(inputs[i + 4]),
                     bytes32(inputs[i + 5])
@@ -337,7 +339,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         address base;
         bool isBuy;
         (token, base, isBuy) = decodeTokenOrderTokenAndIsBuy(data);
-        bytes32 orderHash = getTokenOrderDataHash(inputs, 0);
+        bytes32 orderHash = getTokenOrderDataHash(inputs, 0, data, token, base);
         require(
             verify(
                 orderHash,
@@ -360,7 +362,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
             data = inputs[i + 3];
             // check maker order nonce
             require(decodeOrderNonce(data) > userNonce[userId2Address[decodeOrderUserId(data)]]);
-            bytes32 makerOrderHash = getTokenOrderDataHash(inputs, i);
+            bytes32 makerOrderHash = getTokenOrderDataHash(inputs, i, data, token, base);
             require(
                 verify(
                     makerOrderHash,
@@ -455,43 +457,46 @@ contract Joyso is Ownable, JoysoDataDecoder {
     ///     data [24..63] (address) tokenAddress
     function migrateByAdmin_DQV(uint256[] inputs) external onlyAdmin {
         address token = tokenId2Address[decodeWithdrawTokenId(inputs[2])];
+        address newContract = address(inputs[0]);
         for (uint256 i = 1; i < inputs.length; i += 4) {
-            address user = userId2Address[decodeWithdrawUserId(inputs[i + 1])];
+            uint256 gasFee = inputs[i];
+            uint256 data = inputs[i + 1];
+            address user = userId2Address[decodeWithdrawUserId(data)];
             bytes32 hash = keccak256(
                 this,
-                inputs[i],
-                genUserSignedWithdrawData(inputs[i + 1], token),
-                address(inputs[0])
+                gasFee,
+                genUserSignedWithdrawData(data, token),
+                newContract
             );
             require(
                 verify(
                     hash,
                     user,
-                    uint8(retrieveV(inputs[i + 1])),
+                    uint8(retrieveV(data)),
                     bytes32(inputs[i + 2]),
                     bytes32(inputs[i + 3])
                 )
             );
-            if (inputs[i] > 0) {
-                uint256 paymentMethod = decodeWithdrawPaymentMethod(inputs[i + 1]);
+            if (gasFee > 0) {
+                uint256 paymentMethod = decodeWithdrawPaymentMethod(data);
                 if (paymentMethod == PAY_BY_JOY) {
-                    balances[joyToken][user] = balances[joyToken][user].sub(inputs[i]);
-                    balances[joyToken][joysoWallet] = balances[joyToken][joysoWallet].add(inputs[i]);
+                    balances[joyToken][user] = balances[joyToken][user].sub(gasFee);
+                    balances[joyToken][joysoWallet] = balances[joyToken][joysoWallet].add(gasFee);
                 } else if (paymentMethod == PAY_BY_TOKEN) {
-                    balances[token][user] = balances[token][user].sub(inputs[i]);
-                    balances[token][joysoWallet] = balances[token][joysoWallet].add(inputs[i]);
+                    balances[token][user] = balances[token][user].sub(gasFee);
+                    balances[token][joysoWallet] = balances[token][joysoWallet].add(gasFee);
                 } else {
-                    balances[0][user] = balances[0][user].sub(inputs[i]);
-                    balances[0][joysoWallet] = balances[0][joysoWallet].add(inputs[i]);
+                    balances[0][user] = balances[0][user].sub(gasFee);
+                    balances[0][joysoWallet] = balances[0][joysoWallet].add(gasFee);
                 }
             }
             uint256 amount = balances[token][user];
             balances[token][user] = 0;
             if (token == 0) {
-                Migratable(address(inputs[0])).migrate.value(amount)(user, amount, token);
+                Migratable(newContract).migrate.value(amount)(user, amount, token);
             } else {
-                ERC20(token).approve(address(inputs[0]), amount);
-                Migratable(address(inputs[0])).migrate(user, amount, token);
+                ERC20(token).approve(newContract, amount);
+                Migratable(newContract).migrate(user, amount, token);
             }
         }
     }
@@ -544,27 +549,16 @@ contract Joyso is Ownable, JoysoDataDecoder {
     )
         internal view returns (bytes32)
     {
-        uint256 amountSell = inputs[offset + 0];
-        uint256 amountBuy = inputs[offset + 1];
-        uint256 gasFee = inputs[offset + 2];
         uint256 data = genUserSignedOrderData(inputs[offset + 3], isBuy, token);
-        return keccak256(this, amountSell, amountBuy, gasFee, data);
+        return keccak256(this, inputs[offset], inputs[offset + 1], inputs[offset + 2], data);
     }
 
     /// @dev get token order's hash for user to sign, internal
     /// @param inputs forword tokenOrderMatch's input to this function
     /// @param offset offset of the order in inputs
-    function getTokenOrderDataHash(uint256[] inputs, uint256 offset) internal view returns (bytes32) {
-        uint256 amountSell = inputs[offset + 0];
-        uint256 amountBuy = inputs[offset + 1];
-        uint256 gasFee = inputs[offset + 2];
-        bool isBuy;
-        address token;
-        address base;
-        (token, base, isBuy) = decodeTokenOrderTokenAndIsBuy(inputs[offset + 3]);
-        uint256 joyPrice = decodeTokenOrderJoyPrice(inputs[offset + 3]);
-        uint256 data = genUserSignedTokenOrderData(inputs[offset + 3], token);
-        return keccak256(this, amountSell, amountBuy, gasFee, data, base, joyPrice);
+    function getTokenOrderDataHash(uint256[] inputs, uint256 offset, uint256 data, address token, address base) internal returns (bytes32) {
+        uint256 joyPrice = decodeTokenOrderJoyPrice(data);
+        return keccak256(this, inputs[offset], inputs[offset + 1], inputs[offset + 2], genUserSignedTokenOrderData(data, token), base, joyPrice);
     }
 
     /// @dev check if the provided signature is valid, internal
@@ -574,10 +568,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
     /// @param r sig_r
     /// @param s sig_s
     function verify(bytes32 hash, address sender, uint8 v, bytes32 r, bytes32 s) internal pure returns (bool) {
-        bytes memory prefix = "\x19Ethereum Signed Message:\n32";
-        bytes32 prefixedHash = keccak256(prefix, hash);
-        address signer = ecrecover(prefixedHash, v, r, s);
-        return signer == sender;
+        return ecrecover(keccak256("\x19Ethereum Signed Message:\n32", hash), v, r, s) == sender;
     }
 
     /// @dev give a new user an id, intrnal
@@ -637,18 +628,6 @@ contract Joyso is Ownable, JoysoDataDecoder {
             isBuy,
             fee
         );
-    }
-
-    function updateTradeAmount(
-        uint256 _remainingToken,
-        uint256 _baseExecute,
-        uint256 baseGet,
-        uint256 tokenGet
-    )
-        internal pure returns (uint256 remainingToken, uint256 baseExecute)
-    {
-        remainingToken = _remainingToken.sub(tokenGet);
-        baseExecute = _baseExecute.add(baseGet);
     }
 
     function updateUserBalance(
