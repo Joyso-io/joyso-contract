@@ -130,6 +130,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
     /// @notice change the fee collector address, only owner
     function changeJoysoWallet(address newAddress) external onlyOwner {
         joysoWallet = newAddress;
+        addUser(joysoWallet);
     }
 
     /// @notice change lock period, only owner
@@ -332,19 +333,19 @@ contract Joyso is Ownable, JoysoDataDecoder {
     ///     data [23..23] (uint256) isBuy
     ///     data [24..63] (address) tokenAddress
     function matchTokenOrderByAdmin_k44j(uint256[] inputs) external onlyAdmin {
-        uint256 data = inputs[3];
+        address user = userId2Address[decodeOrderUserId(inputs[3])];
         // check taker order nonce
-        require(decodeOrderNonce(data) > userNonce[userId2Address[decodeOrderUserId(data)]]);
+        require(decodeOrderNonce(inputs[3]) > userNonce[user]);
         address token;
         address base;
         bool isBuy;
-        (token, base, isBuy) = decodeTokenOrderTokenAndIsBuy(data);
-        bytes32 orderHash = getTokenOrderDataHash(inputs, 0, data, token, base);
+        (token, base, isBuy) = decodeTokenOrderTokenAndIsBuy(inputs[3]);
+        bytes32 orderHash = getTokenOrderDataHash(inputs, 0, inputs[3], token, base);
         require(
             verify(
                 orderHash,
-                userId2Address[decodeOrderUserId(data)],
-                uint8(retrieveV(data)),
+                user,
+                uint8(retrieveV(inputs[3])),
                 bytes32(inputs[4]),
                 bytes32(inputs[5])
             )
@@ -359,15 +360,15 @@ contract Joyso is Ownable, JoysoDataDecoder {
             //check price, taker price should better than maker price
             require(tokenExecute > 0 && inputs[1].mul(inputs[i + 1]) <= inputs[0].mul(inputs[i]));
 
-            data = inputs[i + 3];
+            user = userId2Address[decodeOrderUserId(inputs[i + 3])];
             // check maker order nonce
-            require(decodeOrderNonce(data) > userNonce[userId2Address[decodeOrderUserId(data)]]);
-            bytes32 makerOrderHash = getTokenOrderDataHash(inputs, i, data, token, base);
+            require(decodeOrderNonce(inputs[i + 3]) > userNonce[user]);
+            bytes32 makerOrderHash = getTokenOrderDataHash(inputs, i, inputs[i + 3], token, base);
             require(
                 verify(
                     makerOrderHash,
-                    userId2Address[decodeOrderUserId(data)],
-                    uint8(retrieveV(data)),
+                    user,
+                    uint8(retrieveV(inputs[i + 3])),
                     bytes32(inputs[i + 4]),
                     bytes32(inputs[i + 5])
                 )
@@ -376,7 +377,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
                 inputs[i],
                 inputs[i + 1],
                 inputs[i + 2],
-                data,
+                inputs[i + 3],
                 tokenExecute,
                 baseExecute,
                 isBuy,
