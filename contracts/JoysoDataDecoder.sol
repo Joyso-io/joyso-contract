@@ -4,41 +4,18 @@ pragma solidity 0.4.19;
 contract JoysoDataDecoder {
     uint256 internal constant ORDER_ISBUY = 0x0000000000000000000000010000000000000000000000000000000000000000;
 
-    /**
-     * @dev rertrive the nonce in an order data
-     * @dev nonce take 8 bytes
-     * @dev its used for avoild order comflict and check if the nonce is canceled.
-     */
     function decodeOrderNonce(uint256 data) internal pure returns (uint256) {
         return data >> 224;
     }
 
-    /**
-     * @dev rertrive the taker fee in an order data
-     * @dev taker fee take 4 bytes
-     * @dev from 1 to 10^4
-     * @dev means 0.01% to 100%
-     */
     function decodeOrderTakerFee(uint256 data) internal pure returns (uint256) {
         return (data & 0x00000000ffff0000000000000000000000000000000000000000000000000000) >> 208;
     }
 
-    /**
-     * @dev rertrive the maker fee in an order data
-     * @dev maker fee take 4 bytes
-     * @dev from 1 to 10^4
-     * @dev means 0.01% to 100%
-     */
     function decodeOrderMakerFee(uint256 data) internal pure returns (uint256) {
         return (data & 0x000000000000ffff000000000000000000000000000000000000000000000000) >> 192;
     }
 
-    /**
-     * @dev rertrive the JoyPrice in an order data
-     * @dev JoyPrice take 11 digitals in hex
-     * @dev from 1 to 10^8
-     * @dev means 1 JOY = 10^-7 ether to 10 ether
-     */
     function decodeOrderJoyPrice(uint256 data) internal pure returns (uint256) {
         return (data & 0x0000000000000000fffffff00000000000000000000000000000000000000000) >> 164;
     }
@@ -47,27 +24,11 @@ contract JoysoDataDecoder {
         return (data & 0x0000000000000000000000000fffffffffffffffffffffff0000000000000000) >> 64;
     }
 
-    /**
-     * @dev get userId
-     * @dev userId take 4 bytes
-     * @dev from 1 to 4294967295
-     */
     function decodeOrderUserId(uint256 data) internal pure returns (uint256) {
         return data & 0x00000000000000000000000000000000000000000000000000000000ffffffff;
     }
 
-    /**
-     * @dev is used to retrieve withdrawData
-     */
     function decodeWithdrawData(uint256 data) internal pure returns (uint256 paymentMethod, uint256 tokenId, uint256 userId) {
-        /**
-            data3
-            0x000181bfeb 0000000000000 1 1 000000000000000000000000000 0002 00000001
-            [ 0.. 7] (uint256) nonce         --> use for random hash
-            [23..23] (uint256) paymentMethod --> 0: ether, 1: Token, 2: joyToken
-            [52..55] (uint256) tokenId
-            [56..63] (address) userId
-            */
         paymentMethod = data & 0x00000000000000000000000f0000000000000000000000000000000000000000;
         tokenId = (data & 0x0000000000000000000000000000000000000000000000000000ffff00000000) >> 32;
         userId = data & 0x00000000000000000000000000000000000000000000000000000000ffffffff;
