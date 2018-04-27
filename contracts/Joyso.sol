@@ -7,7 +7,7 @@ import "./Migratable.sol";
 import "./JoysoDataDecoder.sol";
 
 /// @title Joyso main contract
-/// @author Will
+/// @author Will, Emn178
 contract Joyso is Ownable, JoysoDataDecoder {
     using SafeMath for uint256;
 
