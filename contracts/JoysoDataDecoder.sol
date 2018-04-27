@@ -1,6 +1,6 @@
 pragma solidity 0.4.19;
 
-/// @title Joyso data decoder
+/// @title JoysoDataDecoder
 /// @author Will, Emn178
 /// @notice decode the joyso compressed data
 contract JoysoDataDecoder {

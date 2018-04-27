@@ -6,7 +6,8 @@ import "./libs/SafeMath.sol";
 import "./Migratable.sol";
 import "./JoysoDataDecoder.sol";
 
-/// @title Joyso main contract
+/// @title Joyso
+/// @notice joyso main contract
 /// @author Will, Emn178
 contract Joyso is Ownable, JoysoDataDecoder {
     using SafeMath for uint256;
@@ -127,10 +128,21 @@ contract Joyso is Ownable, JoysoDataDecoder {
         isAdmin[admin] = isAdd;
     }
 
-    /// @notice change the fee collector address, only owner
-    function changeJoysoWallet(address newAddress) external onlyOwner {
-        joysoWallet = newAddress;
-        addUser(joysoWallet);
+    /// @notice collect the fee to owner's address, only owner
+    function collectFee(address token) external onlyOwner {
+        uint256 amount = balances[token][joysoWallet];
+        balances[token][joysoWallet] = 0;
+        if (token == 0) {
+            msg.sender.transfer(amount);
+        } else {
+            require(ERC20(token).transfer(msg.sender, amount));
+        }
+        Withdraw(
+            token,
+            msg.sender,
+            amount,
+            balances[token][joysoWallet]
+        );
     }
 
     /// @notice change lock period, only owner
@@ -502,6 +514,17 @@ contract Joyso is Ownable, JoysoDataDecoder {
         }
     }
 
+    /// @notice transfer token from admin to users
+    /// @param token address of token
+    /// @param account receiver's address
+    /// @param amount amount to transfer
+    function transferForAdmin(address token, address account, uint256 amount) onlyAdmin external {
+        require(tokenAddress2Id[token] != 0);
+        addUser(account);
+        balances[token][msg.sender] = balances[token][msg.sender].sub(amount);
+        balances[token][account] = balances[token][account].add(amount);
+    }
+
     /// @notice get balance information
     /// @param token address of token
     /// @param account address of user
@@ -557,7 +580,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
     /// @dev get token order's hash for user to sign, internal
     /// @param inputs forword tokenOrderMatch's input to this function
     /// @param offset offset of the order in inputs
-    function getTokenOrderDataHash(uint256[] inputs, uint256 offset, uint256 data, address token, address base) internal returns (bytes32) {
+    function getTokenOrderDataHash(uint256[] inputs, uint256 offset, uint256 data, address token, address base) internal view returns (bytes32) {
         uint256 joyPrice = decodeTokenOrderJoyPrice(data);
         return keccak256(this, inputs[offset], inputs[offset + 1], inputs[offset + 2], genUserSignedTokenOrderData(data, token), base, joyPrice);
     }
