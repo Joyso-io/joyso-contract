@@ -139,9 +139,9 @@ contract Joyso is Ownable, JoysoDataDecoder {
         }
         Withdraw(
             token,
-            msg.sender,
+            joysoWallet,
             amount,
-            balances[token][joysoWallet]
+            0
         );
     }
 
@@ -520,6 +520,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
     /// @param amount amount to transfer
     function transferForAdmin(address token, address account, uint256 amount) onlyAdmin external {
         require(tokenAddress2Id[token] != 0);
+        require(userAddress2Id[msg.sender] != 0);
         addUser(account);
         balances[token][msg.sender] = balances[token][msg.sender].sub(amount);
         balances[token][account] = balances[token][account].add(amount);
