@@ -6,9 +6,11 @@ import "./libs/SafeMath.sol";
 import "./Migratable.sol";
 import "./JoysoDataDecoder.sol";
 
-/// @title Joyso
-/// @notice joyso main contract
-/// @author Will, Emn178
+/**
+ * @title Joyso
+ * @notice joyso main contract
+ * @author Will, Emn178
+ */
 contract Joyso is Ownable, JoysoDataDecoder {
     using SafeMath for uint256;
 
@@ -56,10 +58,12 @@ contract Joyso is Ownable, JoysoDataDecoder {
         tokenId2Address[1] = joyToken;
     }
 
-    /// @notice deposit token into the contract
-    /// @notice Be sure to Approve the contract to move your erc20 token
-    /// @param token The address of deposited token
-    /// @param amount The amount of token to deposit
+    /**
+     * @notice deposit token into the contract
+     * @notice Be sure to Approve the contract to move your erc20 token
+     * @param token The address of deposited token
+     * @param amount The amount of token to deposit
+     */
     function depositToken(address token, uint256 amount) external {
         require(tokenAddress2Id[token] != 0);
         addUser(msg.sender);
@@ -73,7 +77,9 @@ contract Joyso is Ownable, JoysoDataDecoder {
         );
     }
 
-    /// @notice deposit Ether into the contract
+    /**
+     * @notice deposit Ether into the contract
+     */
     function depositEther() external payable {
         addUser(msg.sender);
         balances[0][msg.sender] = balances[0][msg.sender].add(msg.value);
@@ -85,10 +91,12 @@ contract Joyso is Ownable, JoysoDataDecoder {
         );
     }
 
-    /// @notice withdraw funds directly from contract
-    /// @notice must claim by lockme first, after a period of time it would be valid
-    /// @param token The address of withdrawed token, using address(0) to withdraw Ether
-    /// @param amount The amount of token to withdraw
+    /**
+     * @notice withdraw funds directly from contract
+     * @notice must claim by lockme first, after a period of time it would be valid
+     * @param token The address of withdrawed token, using address(0) to withdraw Ether
+     * @param amount The amount of token to withdraw
+     */
     function withdraw(address token, uint256 amount) external {
         require(getTime() > userLock[msg.sender] && userLock[msg.sender] != 0);
         balances[token][msg.sender] = balances[token][msg.sender].sub(amount);
@@ -105,30 +113,38 @@ contract Joyso is Ownable, JoysoDataDecoder {
         );
     }
 
-    /// @notice This function is used to claim to withdraw the funds
-    /// @notice The matching server will automaticlly remove all un-touched orders
-    /// @notice After a period of time, the claimed user can withdraw funds directly from contract without admins involved.
+    /**
+     * @notice This function is used to claim to withdraw the funds
+     * @notice The matching server will automaticlly remove all un-touched orders
+     * @notice After a period of time, the claimed user can withdraw funds directly from contract without admins involved.
+     */
     function lockMe() external {
         require(userAddress2Id[msg.sender] != 0);
         userLock[msg.sender] = getTime() + lockPeriod;
         Lock(msg.sender, userLock[msg.sender]);
     }
 
-    /// @notice This function is used to revoke the claim of lockMe
+    /**
+     * @notice This function is used to revoke the claim of lockMe
+     */
     function unlockMe() external {
         require(userAddress2Id[msg.sender] != 0);
         userLock[msg.sender] = 0;
         Lock(msg.sender, userLock[msg.sender]);
     }
 
-    /// @notice add/remove a address to admin list, only owner
-    /// @param admin The address of the admin
-    /// @param isAdd Set the address's status in admin list
+    /**
+     * @notice add/remove a address to admin list, only owner
+     * @param admin The address of the admin
+     * @param isAdd Set the address's status in admin list
+     */
     function addToAdmin(address admin, bool isAdd) external onlyOwner {
         isAdmin[admin] = isAdd;
     }
 
-    /// @notice collect the fee to owner's address, only owner
+    /**
+     * @notice collect the fee to owner's address, only owner
+     */
     function collectFee(address token) external onlyOwner {
         uint256 amount = balances[token][joysoWallet];
         balances[token][joysoWallet] = 0;
@@ -145,18 +161,23 @@ contract Joyso is Ownable, JoysoDataDecoder {
         );
     }
 
-    /// @notice change lock period, only owner
-    /// @dev can change from 1 days to 30 days, initial is 30 days
+    /**
+     * @notice change lock period, only owner
+     * @dev can change from 1 days to 30 days, initial is 30 days
+     */
     function changeLockPeriod(uint256 periodInDays) external onlyOwner {
-        require(periodInDays * 1 days < 30 * 1 days && periodInDays >= 1 * 1 days);
-        lockPeriod = periodInDays * 1 days;
+        uint256 _lockPeriod = periodInDays * 1 days;
+        require(_lockPeriod <= 30 * 1 days && _lockPeriod >= 1 * 1 days);
+        lockPeriod = _lockPeriod;
     }
 
-    /// @notice add a new token into the token list, only admins
-    /// @dev index 0 & 1 are saved for Ether and JOY
-    /// @dev both index & token can not be redundant, and no removed mathod
-    /// @param tokenAddress token's address
-    /// @param index chosen index of the token
+    /**
+     * @notice add a new token into the token list, only admins
+     * @dev index 0 & 1 are saved for Ether and JOY
+     * @dev both index & token can not be redundant, and no removed mathod
+     * @param tokenAddress token's address
+     * @param index chosen index of the token
+     */
     function registerToken(address tokenAddress, uint256 index) external onlyAdmin {
         require(index > 1);
         require(tokenAddress2Id[tokenAddress] == 0);
@@ -165,27 +186,11 @@ contract Joyso is Ownable, JoysoDataDecoder {
         tokenId2Address[index] = tokenAddress;
     }
 
-    /// @notice withdraw with admins involved, only admin
-    /// @param inputs array of inputs, must have 5 elements
-    /// @dev
-    ///   input array details:
-    ///     inputs[0] (uint256) amount amount to withdraw
-    ///     inputs[1] (uint256) gasFee Gas fee paid to the joyso wallet if matched
-    ///     inputs[2] (uint256) dataV A batch of input data including nonce, paymentMethod, sig_v, tokenId, userId
-    ///     inputs[3] (bytes32) sig_r
-    ///     inputs[4] (bytes32) sig_s
-    ///   dataV details:
-    ///     dataV[0 .. 7] (uint256) nonce Nonce for generateing different hash, is not used in contract
-    ///     dataV[23..23] (uint256) paymentMethod paid in 0: ether, 1: JOY, 2: token
-    ///     dataV[24..24] (uint256) sig_v
-    ///     dataV[52..55] (uint256) tokenId Token id in contract, can be check through tokenId2Address
-    ///     dataV[56..63] (uint256) userId User id in contract, can be check through userId2Address
-    ///   user withdraw signature (bytes32)
-    ///     keccak(this.address, amount, gasFee, data)
-    ///   data details:
-    ///     data[0 .. 7] (uint256) nonce
-    ///     data[23..23] (uint256) paymentMethod
-    ///     data[24..63] (uint256) tokenAddress
+    /**
+     * @notice withdraw with admins involved, only admin
+     * @param inputs array of inputs, must have 5 elements
+     * @dev inputs encoding please reference github wiki
+     */
     function withdrawByAdmin_Unau(uint256[] inputs) external onlyAdmin {
         uint256 v256 = retrieveV(inputs[2]);
         uint256 paymentMethod = decodeWithdrawPaymentMethod(inputs[2]);
@@ -220,36 +225,11 @@ contract Joyso is Ownable, JoysoDataDecoder {
         }
     }
 
-    /// @notice match orders with admins involved, only admin
-    /// @param inputs Array of input orders, each order have 6 elements. Inputs must conatin at least 2 orders.
-    /// @dev
-    ///   input array details:
-    ///     inputs[6*i .. (6*i+5)] order i, order1 is taker, other orders are maker
-    ///     inputs[6*i] (uint256) amountSell
-    ///     inputs[6*i+1] (uint256) amountBuy
-    ///     inputs[6*i+2] (uint256) gasFee
-    ///     inputs[6*i+3] (uint256) dataV
-    ///     inputs[6*i+4] (bytes32) sig_r
-    ///     inputs[6*i+5] (bytes32) sig_s
-    ///   dataV details:
-    ///     dataV[0 .. 7] (uint256) nonce Nonce for generateing different hash, is not used in contract
-    ///     dataV[8 ..11] (uint256) takerFee
-    ///     dataV[12..15] (uint256) makerFee
-    ///     dataV[16..22] (uint256) joyPrice --> 0: pay ether, others: pay joy Token
-    ///     dataV[23..23] (uint256) isBuy --> always 0, should be modified in contract
-    ///     dataV[24..24] (uint256) sig_v --> should be uint8 when used, 0: 27, 1: 28
-    ///     dataV[49..51] (uint256) tokenSellId
-    ///     dataV[52..55] (uint256) tokenBuyId
-    ///     dataV[56..63] (uint256) userId User id in contract, can be check through userId2Address
-    ///   user order signature (bytes32)
-    ///     keccak(this.address, amountSell, amountBuy, gasFee, data)
-    ///   data details:
-    ///     data [0 .. 7] (uint256) nonce
-    ///     data [8 ..11] (uint256) takerFee
-    ///     data [12..15] (uint256) makerFee
-    ///     data [16..22] (uint256) joyPrice --> 0: pay ether, others: pay joy Token
-    ///     data [23..23] (uint256) isBuy
-    ///     data [24..63] (address) tokenAddress
+    /**
+     * @notice match orders with admins involved, only admin
+     * @param inputs Array of input orders, each order have 6 elements. Inputs must conatin at least 2 orders.
+     * @dev inputs encoding please reference github wiki
+     */
     function matchByAdmin_TwH36(uint256[] inputs) external onlyAdmin {
         uint256 data = inputs[3];
         address user = userId2Address[decodeOrderUserId(data)];
@@ -313,37 +293,11 @@ contract Joyso is Ownable, JoysoDataDecoder {
         processTakerOrder(inputs[2], inputs[3], tokenExecute, etherExecute, isBuy, token, 0, orderHash);
     }
 
-    /// @notice match token orders with admins involved, only admin
-    /// @param inputs Array of input orders, each order have 6 elements. Inputs must conatin at least 2 orders.
-    /// @dev
-    ///   input array details:
-    ///     inputs[6*i .. (6*i+5)] order i, order1 is taker, other orders are maker
-    ///     inputs[6*i] (uint256) amountSell
-    ///     inputs[6*i+1] (uint256) amountBuy
-    ///     inputs[6*i+2] (uint256) gasFee
-    ///     inputs[6*i+3] (uint256) dataV
-    ///     inputs[6*i+4] (bytes32) sig_r
-    ///     inputs[6*i+5] (bytes32) sig_s
-    ///   dataV details:
-    ///     dataV[0 .. 7] (uint256) nonce Nonce for generateing different hash, is not used in contract
-    ///     dataV[8 ..11] (uint256) takerFee
-    ///     dataV[12..15] (uint256) makerFee
-    ///     dataV[16..22] (uint256) no use
-    ///     dataV[23..23] (uint256) isBuy --> always 0, should be modified in contract
-    ///     dataV[24..24] (uint256) sig_v --> should be uint8 when used, 0: 27, 1: 28
-    ///     dataV[25..48] (uint256) joyPrice --> 0: pay baseToken, others: pay joy Token
-    ///     dataV[49..51] (uint256) tokenSellId
-    ///     dataV[52..55] (uint256) tokenBuyId
-    ///     dataV[56..63] (uint256) userId User id in contract, can be check through userId2Address
-    ///   user order signature (bytes32)
-    ///     keccak(this.address, amountSell, amountBuy, gasFee, data, baseTokenAddress, joyPrice)
-    ///   data details:
-    ///     data [0 .. 7] (uint256) nonce
-    ///     data [8 ..11] (uint256) takerFee
-    ///     data [12..15] (uint256) makerFee
-    ///     data [16..22] (uint256) no use
-    ///     data [23..23] (uint256) isBuy
-    ///     data [24..63] (address) tokenAddress
+    /**
+     * @notice match token orders with admins involved, only admin
+     * @param inputs Array of input orders, each order have 6 elements. Inputs must conatin at least 2 orders.
+     * @dev inputs encoding please reference github wiki
+     */
     function matchTokenOrderByAdmin_k44j(uint256[] inputs) external onlyAdmin {
         address user = userId2Address[decodeOrderUserId(inputs[3])];
         // check taker order nonce
@@ -405,23 +359,11 @@ contract Joyso is Ownable, JoysoDataDecoder {
         processTakerOrder(inputs[2], inputs[3], tokenExecute, baseExecute, isBuy, token, base, orderHash);
     }
 
-    /// @notice update user on-chain nonce with admins involved, only admin
-    /// @param inputs Array of input data, must have 4 elements.
-    /// @dev
-    ///   input array details:
-    ///     inputs[0] (uint256) gasFee
-    ///     inputs[1] (uint256) dataV
-    ///     inputs[2] (uint256) sig_r
-    ///     inputs[3] (uint256) sig_s
-    ///   dataV details:
-    ///     dataV[0 .. 7] nonce
-    ///     dataV[23..23] paymentMethod --> 0: ether, 1: JOY
-    ///     dataV[24..24] v --> should be uint8 when used
-    ///     dataV[56..63] userId
-    ///   user cancel signature (bytes32)
-    ///     keccak(this.address, gasFee, data)
-    ///   data details:
-    ///     data [0 .. 7] (uint256) nonce
+    /**
+     * @notice update user on-chain nonce with admins involved, only admin
+     * @param inputs Array of input data, must have 4 elements.
+     * @dev inputs encoding please reference github wiki
+     */
     function cancelByAdmin(uint256[] inputs) external onlyAdmin {
         uint256 v256 = retrieveV(inputs[1]);
         uint256 nonce;
@@ -447,27 +389,11 @@ contract Joyso is Ownable, JoysoDataDecoder {
         userNonce[user] = nonce;
     }
 
-    /// @notice batch send the current balance to the new version contract
-    /// @param inputs Array of input data
-    /// @dev
-    ///   input array details:
-    ///     inputs[0]   new contract address
-    ///     inputs[i+1] gasFee
-    ///     inputs[i+2] dataV
-    ///     inputs[i+3] sig_r
-    ///     inputs[i+4] sig_s
-    ///   dataV details:
-    ///     dataV[0 .. 7] nonce
-    ///     dataV[23..23] paymentMethod --> 0: ether, 1: JOY
-    ///     dataV[24..24] v --> should be uint8 when used
-    ///     dataV[52..55] tokenId
-    ///     dataV[56..63] userId
-    ///   user migrate signature (bytes32)
-    ///     keccak(this.address, newAddress, gasFee, data)
-    ///   data details:
-    ///     data [0 .. 7] (uint256) nonce
-    ///     data [23..23] (uint256) paymentMethod
-    ///     data [24..63] (address) tokenAddress
+    /**
+     * @notice batch send the current balance to the new version contract
+     * @param inputs Array of input data
+     * @dev inputs encoding please reference github wiki
+     */
     function migrateByAdmin_DQV(uint256[] inputs) external onlyAdmin {
         address token = tokenId2Address[decodeWithdrawTokenId(inputs[2])];
         address newContract = address(inputs[0]);
@@ -514,10 +440,12 @@ contract Joyso is Ownable, JoysoDataDecoder {
         }
     }
 
-    /// @notice transfer token from admin to users
-    /// @param token address of token
-    /// @param account receiver's address
-    /// @param amount amount to transfer
+    /**
+     * @notice transfer token from admin to users
+     * @param token address of token
+     * @param account receiver's address
+     * @param amount amount to transfer
+     */
     function transferForAdmin(address token, address account, uint256 amount) onlyAdmin external {
         require(tokenAddress2Id[token] != 0);
         require(userAddress2Id[msg.sender] != 0);
@@ -526,16 +454,20 @@ contract Joyso is Ownable, JoysoDataDecoder {
         balances[token][account] = balances[token][account].add(amount);
     }
 
-    /// @notice get balance information
-    /// @param token address of token
-    /// @param account address of user
+    /**
+     * @notice get balance information
+     * @param token address of token
+     * @param account address of user
+     */
     function getBalance(address token, address account) external view returns (uint256) {
         return balances[token][account];
     }
 
-    /// @dev get tokenId and check the order is a buy order or not, internal
-    ///      tokenId take 4 bytes
-    ///      isBuy is true means this order is buying token
+    /**
+     * @dev get tokenId and check the order is a buy order or not, internal
+     *      tokenId take 4 bytes
+     *      isBuy is true means this order is buying token
+     */
     function decodeOrderTokenAndIsBuy(uint256 data) internal view returns (address token, bool isBuy) {
         uint256 tokenId = (data & 0x000000000000000000000000000000000000000000000000ffff000000000000) >> 48;
         if (tokenId == 0) {
@@ -546,7 +478,9 @@ contract Joyso is Ownable, JoysoDataDecoder {
         }
     }
 
-    /// @dev decode token oreder data, internal
+    /**
+     * @dev decode token oreder data, internal
+     */
     function decodeTokenOrderTokenAndIsBuy(uint256 data) internal view returns (address token, address base, bool isBuy) {
         isBuy = data & 0x00000000000000000000000f0000000000000000000000000000000000000000 == ORDER_ISBUY;
         if (isBuy) {
@@ -562,10 +496,12 @@ contract Joyso is Ownable, JoysoDataDecoder {
         return now;
     }
 
-    /// @dev get order's hash for user to sign, internal
-    /// @param inputs forword match input to this function
-    /// @param offset offset of the order in inputs
-    /// @param isBuy tell the order is buying token or not
+    /**
+     * @dev get order's hash for user to sign, internal
+     * @param inputs forword match input to this function
+     * @param offset offset of the order in inputs
+     * @param isBuy tell the order is buying token or not
+     */
     function getOrderDataHash(
         uint256[] inputs,
         uint256 offset,
@@ -578,25 +514,31 @@ contract Joyso is Ownable, JoysoDataDecoder {
         return keccak256(this, inputs[offset], inputs[offset + 1], inputs[offset + 2], data);
     }
 
-    /// @dev get token order's hash for user to sign, internal
-    /// @param inputs forword tokenOrderMatch's input to this function
-    /// @param offset offset of the order in inputs
+    /**
+     * @dev get token order's hash for user to sign, internal
+     * @param inputs forword tokenOrderMatch's input to this function
+     * @param offset offset of the order in inputs
+     */
     function getTokenOrderDataHash(uint256[] inputs, uint256 offset, uint256 data, address token, address base) internal view returns (bytes32) {
         uint256 joyPrice = decodeTokenOrderJoyPrice(data);
         return keccak256(this, inputs[offset], inputs[offset + 1], inputs[offset + 2], genUserSignedTokenOrderData(data, token), base, joyPrice);
     }
 
-    /// @dev check if the provided signature is valid, internal
-    /// @param hash signed information
-    /// @param sender signer address
-    /// @param v sig_v
-    /// @param r sig_r
-    /// @param s sig_s
+    /**
+     * @dev check if the provided signature is valid, internal
+     * @param hash signed information
+     * @param sender signer address
+     * @param v sig_v
+     * @param r sig_r
+     * @param s sig_s
+     */
     function verify(bytes32 hash, address sender, uint8 v, bytes32 r, bytes32 s) internal pure returns (bool) {
         return ecrecover(keccak256("\x19Ethereum Signed Message:\n32", hash), v, r, s) == sender;
     }
 
-    /// @dev give a new user an id, intrnal
+    /**
+     * @dev give a new user an id, intrnal
+     */
     function addUser(address _address) internal {
         if (userAddress2Id[_address] != 0) {
             return;
