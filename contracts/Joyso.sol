@@ -47,6 +47,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
     address public joyToken;
     uint256 public lockPeriod = 30 days;
     uint256 public userCount;
+    bool public tradeEventEnabled = true;
 
     modifier onlyAdmin {
         require(msg.sender == owner || isAdmin[msg.sender]);
@@ -148,6 +149,14 @@ contract Joyso is Ownable, JoysoDataDecoder {
         require(userAddress2Id[msg.sender] != 0);
         userLock[msg.sender] = 0;
         Lock(msg.sender, 0);
+    }
+
+    /**
+     * @notice set tradeEventEnabled, only owner
+     * @param enabled Set tradeEventEnabled if enabled
+     */
+    function setTradeEventEnabled(bool enabled) external onlyOwner {
+        tradeEventEnabled = enabled;
     }
 
     /**
@@ -601,7 +610,9 @@ contract Joyso is Ownable, JoysoDataDecoder {
         uint256 fee = calculateFee(gasFee, data, baseExecute, orderHash, true, base == 0);
         updateUserBalance(data, isBuy, baseExecute, tokenExecute, fee, token, base);
         orderFills[orderHash] = orderFills[orderHash].add(tokenExecute);
-        TradeSuccess(userId2Address[data & USER_MASK], baseExecute, tokenExecute, isBuy, fee);
+        if (tradeEventEnabled) {
+            TradeSuccess(userId2Address[data & USER_MASK], baseExecute, tokenExecute, isBuy, fee);
+        }
     }
 
     function internalTrade(
@@ -625,13 +636,15 @@ contract Joyso is Ownable, JoysoDataDecoder {
         orderFills[orderHash] = orderFills[orderHash].add(tokenGet);
         remainingToken = _remainingToken.sub(tokenGet);
         baseExecute = _baseExecute.add(baseGet);
-        TradeSuccess(
-            userId2Address[data & USER_MASK],
-            baseGet,
-            tokenGet,
-            isBuy,
-            fee
-        );
+        if (tradeEventEnabled) {
+            TradeSuccess(
+                userId2Address[data & USER_MASK],
+                baseGet,
+                tokenGet,
+                isBuy,
+                fee
+            );
+        }
     }
 
     function updateUserBalance(
