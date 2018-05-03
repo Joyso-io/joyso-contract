@@ -16,7 +16,9 @@ contract('cancel.js', accounts => {
     const joyso = await Joyso.at(temp[0]);
 
     const inputs = await helper.generateCancel(helper.ether(0.001), 0x1234, 0, user1, joyso.address);
-    await joyso.cancelByAdmin(inputs, { from: admin });
+    const tx = await joyso.cancelByAdmin.sendTransaction(inputs, { from: admin, gas: 4700000 });
+    const txReceipt = await web3.eth.getTransactionReceipt(tx);
+    console.log('gas: ' + txReceipt.gasUsed);
 
     const user1Nonce = await joyso.userNonce.call(user1);
     assert.equal(user1Nonce, 0x1234);

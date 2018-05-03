@@ -21,7 +21,9 @@ contract('joyso withdraw', accounts => {
     const user1AccountTokenBalance = await token.balanceOf(user1);
 
     const inputs = await helper.generateWithdraw(helper.ether(0.5), helper.ether(0.02), 0, token.address, user1, joyso.address);
-    await joyso.withdrawByAdmin_Unau(inputs, { from: admin });
+    const tx = await joyso.withdrawByAdmin_Unau.sendTransaction(inputs, { from: admin, gas: 4700000 });
+    const txReceipt = await web3.eth.getTransactionReceipt(tx);
+    console.log('gas: ' + txReceipt.gasUsed);
 
     const user1EtherBalanceAfter = await joyso.getBalance(ETHER, user1);
     const joysoEtherBalanceAfter = await joyso.getBalance(ETHER, joysoWallet);
