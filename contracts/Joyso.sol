@@ -60,7 +60,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
     event Lock(address user, uint256 timeLock);
 
     // for debug
-    event TradeSuccess(address user, uint256 etherGet, uint256 tokenGet, bool isBuy, uint256 fee);
+    event TradeSuccess(address user, uint256 baseAmount, uint256 tokenAmount, bool isBuy, uint256 fee);
 
     function Joyso(address _joysoWallet, address _joyToken) public {
         joysoWallet = _joysoWallet;
@@ -325,7 +325,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
                 etherExecute,
                 isBuy,
                 token,
-                address(0),
+                0,
                 makerOrderHash
             );
         }
@@ -598,7 +598,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
     )
         internal
     {
-        uint256 fee = calculateFee(gasFee, data, baseExecute, orderHash, true, base != address(0));
+        uint256 fee = calculateFee(gasFee, data, baseExecute, orderHash, true, base == 0);
         updateUserBalance(data, isBuy, baseExecute, tokenExecute, fee, token, base);
         orderFills[orderHash] = orderFills[orderHash].add(tokenExecute);
         TradeSuccess(userId2Address[data & USER_MASK], baseExecute, tokenExecute, isBuy, fee);
@@ -620,7 +620,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
     {
         uint256 tokenGet = calculateTokenGet(amountSell, amountBuy, _remainingToken, isBuy, orderHash);
         uint256 baseGet = calculateBaseGet(amountSell, amountBuy, isBuy, tokenGet);
-        uint256 fee = calculateFee(gasFee, data, baseGet, orderHash, false, base != address(0));
+        uint256 fee = calculateFee(gasFee, data, baseGet, orderHash, false, base == 0);
         updateUserBalance(data, isBuy, baseGet, tokenGet, fee, token, base);
         orderFills[orderHash] = orderFills[orderHash].add(tokenGet);
         remainingToken = _remainingToken.sub(tokenGet);
@@ -648,8 +648,7 @@ contract Joyso is Ownable, JoysoDataDecoder {
         address user = userId2Address[data & USER_MASK];
         uint256 baseFee = fee;
         uint256 joyFee = 0;
-        if ((base == address(0) && (data & JOY_PRICE_MASK) >> 164 != 0) ||
-            (base != address(0) && (data & TOKEN_JOY_PRICE_MASK) >> 64 != 0)) {
+        if ((base == 0 ? (data & JOY_PRICE_MASK) >> 164 : (data & TOKEN_JOY_PRICE_MASK) >> 64) != 0) {
             joyFee = fee;
             baseFee = 0;
         }
@@ -676,19 +675,15 @@ contract Joyso is Ownable, JoysoDataDecoder {
         uint256 baseGet,
         bytes32 orderHash,
         bool isTaker,
-        bool isTokenOrder
+        bool isEthOrder
     )
         internal view returns (uint256)
     {
         uint256 fee = orderFills[orderHash] == 0 ? gasFee : 0;
         uint256 txFee = baseGet.mul(isTaker ? (data & TAKER_FEE_MASK) >> 208 : (data & MAKER_FEE_MASK) >> 192) / 10000;
-        uint256 joyPrice = isTokenOrder ? (data & TOKEN_JOY_PRICE_MASK) >> 64 : (data & JOY_PRICE_MASK) >> 164;
+        uint256 joyPrice = isEthOrder ? (data & JOY_PRICE_MASK) >> 164 : (data & TOKEN_JOY_PRICE_MASK) >> 64;
         if (joyPrice != 0) {
-            if (isTokenOrder) {
-                txFee = txFee * (10 ** 12) / joyPrice;
-            } else {
-                txFee = txFee / (10 ** 5) / joyPrice;
-            }
+            txFee = isEthOrder ? txFee / (10 ** 5) / joyPrice : txFee * (10 ** 12) / joyPrice;
         }
         return fee.add(txFee);
     }
