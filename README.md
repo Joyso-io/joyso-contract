@@ -1,13 +1,13 @@
 # joyso-contracts
+JOYSO exchange contract
 
-## Installation 
-This will install the dependancy package for test. 
+## Installation
+This will install the dependancy package for test.
 ```
-npm install 
+npm install
 ```
 
 ## Test
 ```
-truffle dev 
-test
+npm test
 ```
