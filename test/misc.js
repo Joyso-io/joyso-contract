@@ -140,4 +140,59 @@ contract('Joyso misc.js', function (accounts) {
       assert(revertFound, `Expected "revert", got ${error} instead`);
     }
   });
+
+  it('owner collectFee', async function () {
+    const temp = await helper.setupEnvironment();
+    const joyso = await Joyso.at(temp[0]);
+    const token = await TestToken.at(temp[1]);
+    const joy = await TestToken.at(temp[2]);
+
+    const inputs = [];
+    const order1 = await helper.generateOrder(10000000000000000, 10000000, 150000000000000000, 10, 20, 10, 0, ORDER_ISBUY, ETHER, token.address, user2, joyso.address);
+    Array.prototype.push.apply(inputs, order1);
+    const order2 = await helper.generateOrder(10000000, 10000000000000000, 1500000000, 11, 10, 5, 0x3e80, 0, token.address, ETHER, user1, joyso.address);
+    Array.prototype.push.apply(inputs, order2);
+
+    const adminEtherBalance = await web3.eth.getBalance(admin);
+    const adminJOYBalance = await joy.balanceOf(admin);
+
+    await joyso.matchByAdmin_TwH36(inputs, { from: admin });
+    // collectFee from user should fail
+    try {
+      await joyso.collectFee(ETHER, { from: user1 });
+      assert.fail('Expected revert not received');
+    } catch (error) {
+      const revertFound = error.message.search('revert') >= 0 || error.message.search('assert') >= 0;
+      assert(revertFound, `Expected "revert", got ${error} instead`);
+    }
+    await joyso.collectFee(ETHER, { from: admin });
+    await joyso.collectFee(joy.address, { from: admin });
+
+    const adminEtherBalance1 = await web3.eth.getBalance(admin);
+    const adminJOYBalance1 = await joy.balanceOf(admin);
+    const joysoWalletContractEtherBalance1 = await joyso.getBalance(ETHER, joysoWallet);
+    const joysoWalletContractJOYBalance1 = await joyso.getBalance(joy.address, joysoWallet);
+    assert.isAbove(adminEtherBalance1.sub(adminEtherBalance), 0);
+    assert.isAbove(adminJOYBalance1.sub(adminJOYBalance), 0);
+    assert.equal(joysoWalletContractEtherBalance1, 0);
+    assert.equal(joysoWalletContractJOYBalance1, 0);
+  });
+
+  it('transferForAdmin', async function () {
+    const temp = await helper.setupEnvironment();
+    const joyso = await Joyso.at(temp[0]);
+    const joy = await TestToken.at(temp[2]);
+
+    const user1JOYBalance = await joyso.getBalance(joy.address, user1);
+    const user2JOYBalance = await joyso.getBalance(joy.address, user2);
+
+    await joyso.addToAdmin(user1, true, { from: admin });
+    await joyso.transferForAdmin(joy.address, user2, 500000, { from: user1 });
+
+    const user1JOYBalance1 = await joyso.getBalance(joy.address, user1);
+    const user2JOYBalance1 = await joyso.getBalance(joy.address, user2);
+
+    assert.equal(user2JOYBalance1.sub(user2JOYBalance), 500000);
+    assert.equal(user1JOYBalance.sub(user1JOYBalance1), 500000);
+  });
 });
