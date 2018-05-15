@@ -147,7 +147,7 @@ contract('Joyso misc.js', function (accounts) {
     const joy = await TestToken.at(temp[2]);
 
     const inputs = [];
-    const order1 = await helper.generateOrder(10000000000000000, 10000000, 150000000000000000, 10, 20, 10, 0, ORDER_ISBUY, ETHER, token.address, user2, joyso.address);
+    const order1 = await helper.generateOrder(10000000000000000, 10000000, 150000000000000000, 10, 20, 10, 0, true, ETHER, token.address, user2, joyso.address);
     Array.prototype.push.apply(inputs, order1);
     const order2 = await helper.generateOrder(10000000, 10000000000000000, 1500000000, 11, 10, 5, 0x3e80, 0, token.address, ETHER, user1, joyso.address);
     Array.prototype.push.apply(inputs, order2);

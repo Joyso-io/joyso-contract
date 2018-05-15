@@ -10,12 +10,16 @@ contract('tokenMatch.js', accounts => {
   const user2 = accounts[2];
   const joysoWallet = accounts[4];
   const ETHER = '0x0000000000000000000000000000000000000000';
+  let joyso, joy, token;
+
+  beforeEach(async () => {
+    const temp = await helper.setupEnvironment();
+    joyso = Joyso.at(temp[0]);
+    token = TestToken.at(temp[1]);
+    joy = TestToken.at(temp[2]);
+  });
 
   it('try token base match', async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const token = await TestToken.at(temp[1]);
-
     const inputs = [];
     const order1 = await helper.generateTokenOrder(helper.ether(0.5), helper.ether(0.5), helper.ether(0.01),
       0x0000001, 20, 10, 0, true, ETHER, token.address, user1, joyso.address);
@@ -50,11 +54,6 @@ contract('tokenMatch.js', accounts => {
   });
 
   it('token by token match', async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const token = await TestToken.at(temp[1]);
-    const joy = await TestToken.at(temp[2]);
-
     const inputs = [];
     const order1 = await helper.generateTokenOrder(helper.ether(0.5), helper.ether(0.5), helper.ether(0.01),
       0x0000001, 20, 10, 0, true, joy.address, token.address, user1, joyso.address);
@@ -84,10 +83,6 @@ contract('tokenMatch.js', accounts => {
   });
 
   it('try token base match, taker is a sell order', async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const token = await TestToken.at(temp[1]);
-
     const inputs = [];
     const order1 = await helper.generateTokenOrder(helper.ether(0.5), helper.ether(0.5), helper.ether(0.01),
       0x0000001, 20, 10, 0, true, ETHER, token.address, user1, joyso.address);
@@ -119,10 +114,6 @@ contract('tokenMatch.js', accounts => {
   });
 
   it("it should fail if taker's signature is wrong.", async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const token = await TestToken.at(temp[1]);
-
     const inputs = [];
     const order1 = await helper.generateTokenOrder(helper.ether(0.5), helper.ether(0.5), helper.ether(0.01),
       0x0000001, 20, 10, 0, true, ETHER, token.address, user1, joyso.address);
@@ -143,10 +134,6 @@ contract('tokenMatch.js', accounts => {
   });
 
   it("it should fail if the maker's signature is wrong", async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const token = await TestToken.at(temp[1]);
-
     const inputs = [];
     const order1 = await helper.generateTokenOrder(helper.ether(0.5), helper.ether(0.5), helper.ether(0.01),
       0x0000001, 20, 10, 0, true, ETHER, token.address, user1, joyso.address);
@@ -167,10 +154,6 @@ contract('tokenMatch.js', accounts => {
   });
 
   it('a filled taker order should not be trade again', async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const token = await TestToken.at(temp[1]);
-
     const inputs = [];
     const order1 = await helper.generateTokenOrder(helper.ether(0.5), helper.ether(0.5), helper.ether(0.01),
       0x0000001, 20, 10, 0, true, ETHER, token.address, user1, joyso.address);
@@ -191,10 +174,6 @@ contract('tokenMatch.js', accounts => {
   });
 
   it('a filled maker order should not be trade again', async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const token = await TestToken.at(temp[1]);
-
     let inputs = [];
     const order1 = await helper.generateTokenOrder(helper.ether(0.5), helper.ether(0.5), helper.ether(0.01),
       0x0000001, 20, 10, 0, true, ETHER, token.address, user1, joyso.address);
@@ -219,10 +198,6 @@ contract('tokenMatch.js', accounts => {
   });
 
   it("it should fail if the price taker's price is worse than maker's", async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const token = await TestToken.at(temp[1]);
-
     const inputs = [];
     const order1 = await helper.generateTokenOrder(helper.ether(0.5), helper.ether(0.5), helper.ether(0.01),
       0x0000001, 20, 10, 0, true, ETHER, token.address, user1, joyso.address);

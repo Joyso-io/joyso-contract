@@ -11,12 +11,16 @@ contract('match.js', accounts => {
   const user3 = accounts[3];
   const joysoWallet = accounts[4];
   const ETHER = '0x0000000000000000000000000000000000000000';
+  let joyso, joy, token;
+
+  beforeEach(async () => {
+    const temp = await helper.setupEnvironment();
+    joyso = Joyso.at(temp[0]);
+    token = TestToken.at(temp[1]);
+    joy = TestToken.at(temp[2]);
+  });
 
   it('case1, details in google doc', async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const token = await TestToken.at(temp[1]);
-
     const inputs = [];
     const order1 = await helper.generateOrder(helper.ether(0.5), helper.ether(0.5), helper.ether(0.01),
       0x0000001, 20, 10, 0, true, ETHER, token.address, user1, joyso.address);
@@ -48,10 +52,6 @@ contract('match.js', accounts => {
   });
 
   it('case2, details in google doc', async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const token = await TestToken.at(temp[1]);
-
     const inputs = [];
     const order1 = await helper.generateOrder(helper.ether(0.5), helper.ether(0.5), helper.ether(0.01), 1, 20, 10, 0, true, ETHER, token.address, user1, joyso.address);
     inputs.push(...order1);
@@ -88,10 +88,6 @@ contract('match.js', accounts => {
   });
 
   it('case3, details in google doc', async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const token = await TestToken.at(temp[1]);
-
     const inputs = [];
     const order1 = await helper.generateOrder(helper.ether(0.000112), helper.ether(0.000000000007), helper.ether(0.000001), 0x5a41e89b, 20, 10, 0, true, ETHER, token.address, user1, joyso.address);
     inputs.push(...order1);
@@ -115,10 +111,6 @@ contract('match.js', accounts => {
   });
 
   it('case4', async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const token = await TestToken.at(temp[1]);
-
     const inputs = [];
     const order1 = await helper.generateOrder(200000000000000, 1000000, 1000000000000, 10, 20, 10, 0, true, ETHER, token.address, user1, joyso.address);
     inputs.push(...order1);
@@ -137,10 +129,6 @@ contract('match.js', accounts => {
   });
 
   it('case5', async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const token = await TestToken.at(temp[1]);
-
     const inputs = [];
     const order1 = await helper.generateOrder(20000000000000000, 10000000, 1500000000000000, 10, 20, 10, 0, true, ETHER, token.address, user1, joyso.address);
     inputs.push(...order1);
@@ -159,10 +147,6 @@ contract('match.js', accounts => {
   });
 
   it('case6 trade all the user balance', async () => {
-    const temp = await helper.setupEnvironment2();
-    const joyso = await Joyso.at(temp[0]);
-    const token = await TestToken.at(temp[1]);
-
     const inputs = [];
     const order1 = await helper.generateOrder(10000000000000000, 10000000, 1500000000000000, 10, 20, 10, 0, true, ETHER, token.address, user2, joyso.address);
     inputs.push(...order1);
@@ -181,11 +165,6 @@ contract('match.js', accounts => {
   });
 
   it('taker paid Joy for fee', async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const token = await TestToken.at(temp[1]);
-    const joy = await TestToken.at(temp[2]);
-
     const inputs = [];
     const order1 = await helper.generateOrder(helper.ether(0.5), helper.ether(0.5), helper.ether(0.01),
       0x0000001, 20, 10, 1000, true, ETHER, token.address, user1, joyso.address);
@@ -223,10 +202,6 @@ contract('match.js', accounts => {
   });
 
   it('gasFee can only charge once for each order', async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const token = await TestToken.at(temp[1]);
-
     let inputs = [];
     const order1 = await helper.generateOrder(helper.ether(0.25), helper.ether(0.25), helper.ether(0.01), 1, 20, 10, 0, true, ETHER, token.address, user1, joyso.address);
     inputs.push(...order1);
@@ -276,11 +251,6 @@ contract('match.js', accounts => {
   });
 
   it('gasFee (JOY) can only charge once for each order', async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const token = await TestToken.at(temp[1]);
-    const joy = await TestToken.at(temp[2]);
-
     let inputs = [];
     const order1 = await helper.generateOrder(helper.ether(0.25), helper.ether(0.25), helper.ether(0.01), 1, 20, 10, 0, true, ETHER, token.address, user1, joyso.address);
     inputs.push(...order1);
@@ -340,10 +310,6 @@ contract('match.js', accounts => {
   });
 
   it("it should fail if taker's signature is wrong.", async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const token = await TestToken.at(temp[1]);
-
     const inputs = [];
     const order1 = await helper.generateOrder(helper.ether(0.5), helper.ether(0.5), helper.ether(0.01),
       0x0000001, 20, 10, 0, true, ETHER, token.address, user1, joyso.address);
@@ -364,10 +330,6 @@ contract('match.js', accounts => {
   });
 
   it("it should fail if the maker's signature is wrong", async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const token = await TestToken.at(temp[1]);
-
     const inputs = [];
     const order1 = await helper.generateOrder(helper.ether(0.5), helper.ether(0.5), helper.ether(0.01),
       0x0000001, 20, 10, 0, true, ETHER, token.address, user1, joyso.address);
@@ -388,10 +350,6 @@ contract('match.js', accounts => {
   });
 
   it("it should fail if the price taker's price is worse than maker's", async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const token = await TestToken.at(temp[1]);
-
     const inputs = [];
     const order1 = await helper.generateOrder(helper.ether(0.5), helper.ether(0.5), helper.ether(0.01),
       0x0000001, 20, 10, 0, true, ETHER, token.address, user1, joyso.address);
@@ -411,10 +369,6 @@ contract('match.js', accounts => {
   });
 
   it('split a taker order into two transactions', async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const token = await TestToken.at(temp[1]);
-
     let inputs = [];
     const order1 = await helper.generateOrder(helper.ether(0.000112), helper.ether(0.000000000007), helper.ether(0.000001), 0x5a41e89b, 20, 10, 0, true, ETHER, token.address, user1, joyso.address);
     inputs.push(...order1);

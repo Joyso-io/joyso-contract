@@ -9,12 +9,16 @@ contract('joyso withdraw', accounts => {
   const user1 = accounts[1];
   const joysoWallet = accounts[4];
   const ETHER = '0x0000000000000000000000000000000000000000';
+  let joyso, joy, token;
+
+  beforeEach(async () => {
+    const temp = await helper.setupEnvironment();
+    joyso = Joyso.at(temp[0]);
+    token = TestToken.at(temp[1]);
+    joy = TestToken.at(temp[2]);
+  });
 
   it('withdraw token, pay by ether', async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const token = await TestToken.at(temp[1]);
-
     const user1EtherBalance = await joyso.getBalance(ETHER, user1);
     const joysoEtherBalance = await joyso.getBalance(ETHER, joysoWallet);
     const user1TokenBalance = await joyso.getBalance(token.address, user1);
@@ -37,10 +41,6 @@ contract('joyso withdraw', accounts => {
   });
 
   it('withdraw joy, pay by ether', async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const joy = await TestToken.at(temp[2]);
-
     const user1EtherBalance = await joyso.getBalance(ETHER, user1);
     const joysoEtherBalance = await joyso.getBalance(ETHER, joysoWallet);
     const user1TokenBalance = await joyso.getBalance(joy.address, user1);
@@ -61,9 +61,6 @@ contract('joyso withdraw', accounts => {
   });
 
   it('withdraw ether, pay by ether', async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-
     const user1EtherBalance = await joyso.getBalance(ETHER, user1);
     const joysoEtherBalance = await joyso.getBalance(ETHER, joysoWallet);
     const user1AccountEtherBalance = await web3.eth.getBalance(user1);
@@ -81,11 +78,6 @@ contract('joyso withdraw', accounts => {
   });
 
   it('withdraw token, pay by JOY', async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const token = await TestToken.at(temp[1]);
-    const joy = await TestToken.at(temp[2]);
-
     const user1TokenBalance = await joyso.getBalance(token.address, user1);
     const user1JoyBalance = await joyso.getBalance(joy.address, user1);
     const joysoJoyBalance = await joyso.getBalance(joy.address, joysoWallet);
@@ -106,18 +98,11 @@ contract('joyso withdraw', accounts => {
   });
 
   it('withdraw joy, pay by JOY', async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const joy = await TestToken.at(temp[2]);
-
     const inputs = await helper.generateWithdraw(430743357366569795, 2000000000000000, 1, joy.address, user1, joyso.address);
     await joyso.withdrawByAdmin_Unau(inputs, { from: admin });
   });
 
   it('withdraw ether, pay by JOY', async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-
     const user1AccountEtherBalanceOriginal = await web3.eth.getBalance(user1);
     const inputs = await helper.generateWithdraw(helper.ether(0.5), 2000000000000000, 1, ETHER, user1, joyso.address);
     await joyso.withdrawByAdmin_Unau(inputs, { from: admin });
@@ -129,10 +114,6 @@ contract('joyso withdraw', accounts => {
   });
 
   it('withdraw token, pay by token', async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const token = await TestToken.at(temp[1]);
-
     const user1TokenBalance = await joyso.getBalance(token.address, user1);
     const user1AccountTokenBalance = await token.balanceOf(user1);
     const joysoTokenBalance = await joyso.getBalance(token.address, joysoWallet);
@@ -150,10 +131,6 @@ contract('joyso withdraw', accounts => {
   });
 
   it('it should fail if use the same withdraw hash', async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const joy = await TestToken.at(temp[2]);
-
     const inputs = await helper.generateWithdraw(430743357366569795, 2000000000000000, 1, joy.address, user1, joyso.address);
     await joyso.withdrawByAdmin_Unau(inputs, { from: admin });
 
@@ -167,10 +144,6 @@ contract('joyso withdraw', accounts => {
   });
 
   it('it should fail if the signature is wrong', async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const joy = await TestToken.at(temp[2]);
-
     const inputs = await helper.generateWithdraw(430743357366569795, 2000000000000000, 1, joy.address, user1, joyso.address);
     inputs[4] = 12345; // s
 
@@ -184,10 +157,6 @@ contract('joyso withdraw', accounts => {
   });
 
   it('withdraw token, pay by ether. Should fail if no token balance.', async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const token = await TestToken.at(temp[1]);
-
     const inputs = await helper.generateWithdraw(helper.ether(2), helper.ether(0.02), 0, token.address, user1, joyso.address);
 
     try {
@@ -200,10 +169,6 @@ contract('joyso withdraw', accounts => {
   });
 
   it('withdraw token, pay by ether. Should fail if no ether balance.', async () => {
-    const temp = await helper.setupEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const token = await TestToken.at(temp[1]);
-
     const inputs = await helper.generateWithdraw(helper.ether(0.5), helper.ether(2), 0, token.address, user1, joyso.address);
 
     try {

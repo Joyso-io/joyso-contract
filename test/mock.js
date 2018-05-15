@@ -7,11 +7,15 @@ const helper = require('./support/helper.js');
 contract('Joyso mock', accounts => {
   const user1 = accounts[1];
   const ETHER = '0x0000000000000000000000000000000000000000';
+  let joyso, token;
+
+  beforeEach(async () => {
+    const temp = await helper.setupMockEnvironment();
+    joyso = Joyso.at(temp[0]);
+    token = TestToken.at(temp[1]);
+  });
 
   it('withdraw ether directly by user', async () => {
-    const temp = await helper.setupMockEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-
     await joyso.lockMe({ from: user1 });
     const currentTime = await joyso.time.call();
     const lockPeriod = await joyso.lockPeriod.call();
@@ -27,10 +31,6 @@ contract('Joyso mock', accounts => {
   });
 
   it('withdraw token directly by user', async () => {
-    const temp = await helper.setupMockEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const token = await TestToken.at(temp[1]);
-
     await joyso.lockMe({ from: user1 });
     const currentTime = await joyso.time.call();
     const lockPeriod = await joyso.lockPeriod.call();
@@ -49,10 +49,6 @@ contract('Joyso mock', accounts => {
   });
 
   it('unlockMe should reset the user lock', async () => {
-    const temp = await helper.setupMockEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const token = await TestToken.at(temp[1]);
-
     await joyso.lockMe({ from: user1 });
     const currentTime = await joyso.time.call();
     const lockPeriod = await joyso.lockPeriod.call();
@@ -69,9 +65,6 @@ contract('Joyso mock', accounts => {
   });
 
   it('withdraw ether should fail if no balance', async () => {
-    const temp = await helper.setupMockEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-
     await joyso.lockMe({ from: user1 });
     const currentTime = await joyso.time.call();
     const lockPeriod = await joyso.lockPeriod.call();
@@ -86,10 +79,6 @@ contract('Joyso mock', accounts => {
   });
 
   it('withdraw token should fail if no balance', async () => {
-    const temp = await helper.setupMockEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-    const token = await TestToken.at(temp[1]);
-
     await joyso.lockMe({ from: user1 });
     const currentTime = await joyso.time.call();
     const lockPeriod = await joyso.lockPeriod.call();
@@ -104,9 +93,6 @@ contract('Joyso mock', accounts => {
   });
 
   it('withdraw directly should fail', async () => {
-    const temp = await helper.setupMockEnvironment();
-    const joyso = await Joyso.at(temp[0]);
-
     try {
       await joyso.withdraw(ETHER, helper.ether(0.5), { from: user1 });
       assert.fail('Expected revert not received');
