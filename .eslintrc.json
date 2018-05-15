@@ -8,13 +8,15 @@
             "ignoreReadBeforeAssign": false
         }],
         "object-curly-spacing": ["error", "always"],
-        "array-bracket-spacing": ["error", "always"]
+        "array-bracket-spacing": ["error", "always"],
+        "space-before-function-paren": 0
     },
     "globals": {
         "artifacts": false,
         "contract": false,
         "it": false,
         "assert": false,
-        "web3": false
+        "web3": false,
+        "beforeEach": false
     }
 }

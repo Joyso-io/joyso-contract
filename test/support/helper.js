@@ -7,20 +7,19 @@ const web3Utils = require('web3-utils');
 const _ = require('lodash');
 
 const ETHER = '0x0000000000000000000000000000000000000000';
-const ORDER_ISBUY = 1461501637330902918203684832716283019655932542976;
 const admin = web3.eth.accounts[0];
 const user1 = web3.eth.accounts[1];
 const user2 = web3.eth.accounts[2];
 const user3 = web3.eth.accounts[3];
 const joysoWallet = web3.eth.accounts[4];
 
-const genOrderInputDataWithoutV = function (nonce, takerFee, makerFee, joyPrice, isBuy, tokenSellId, tokenBuyId, userId) {
+function genOrderInputDataWithoutV(nonce, takerFee, makerFee, joyPrice, isBuy, tokenSellId, tokenBuyId, userId) {
   let temp = '0x';
   temp += _.padStart(nonce.toString(16), 8, '0');
   temp += _.padStart(takerFee.toString(16), 4, '0');
   temp += _.padStart(makerFee.toString(16), 4, '0');
   temp += _.padStart(joyPrice.toString(16), 7, '0');
-  if (isBuy === ORDER_ISBUY) {
+  if (isBuy) {
     temp += _.padStart('1', 1, '0');
   } else {
     temp += _.padStart('0', 1, '0');
@@ -32,13 +31,13 @@ const genOrderInputDataWithoutV = function (nonce, takerFee, makerFee, joyPrice,
   return temp;
 };
 
-const genTokenOrderInputDataWithoutV = function (nonce, takerFee, makerFee, joyPrice, isBuy, tokenSellId, tokenBuyId, userId) {
+function genTokenOrderInputDataWithoutV(nonce, takerFee, makerFee, joyPrice, isBuy, tokenSellId, tokenBuyId, userId) {
   let temp = '0x';
   temp += _.padStart(nonce.toString(16), 8, '0');
   temp += _.padStart(takerFee.toString(16), 4, '0');
   temp += _.padStart(makerFee.toString(16), 4, '0');
   temp += _.padStart('0', 7, '0');
-  if (isBuy === ORDER_ISBUY) {
+  if (isBuy) {
     temp += _.padStart('1', 1, '0');
   } else {
     temp += _.padStart('0', 1, '0');
@@ -50,9 +49,9 @@ const genTokenOrderInputDataWithoutV = function (nonce, takerFee, makerFee, joyP
   return temp;
 };
 
-const genOrderDataInUserSigned = function (data, isBuy, tokenAddress) {
+function genOrderDataInUserSigned(data, isBuy, tokenAddress) {
   let temp = data.substring(0, 25);
-  if (isBuy === ORDER_ISBUY) {
+  if (isBuy) {
     temp += '1';
   } else {
     temp += '0';
@@ -61,7 +60,7 @@ const genOrderDataInUserSigned = function (data, isBuy, tokenAddress) {
   return temp;
 };
 
-const genOrderInputData = function (dataWithoutV, v) {
+function genOrderInputData(dataWithoutV, v) {
   let temp;
   if (v === 27) {
     temp = dataWithoutV;
@@ -119,14 +118,14 @@ module.exports = {
 
     // user1 sign the withdraw msg
     /*
-            -----------------------------------
-            user withdraw singature (uint256)
-            (this.address, amount, gasFee, data)
-            -----------------------------------
-            data [0 .. 7] (uint256) nonce --> does not used when withdraw
-            data [23..23] (uint256) paymentMethod --> 0: ether, 1: JOY, 2: token
-            data [24..63] (address) tokenAddress
-        */
+        -----------------------------------
+        user withdraw singature (uint256)
+        (this.address, amount, gasFee, data)
+        -----------------------------------
+        data [0 .. 7] (uint256) nonce --> does not used when withdraw
+        data [23..23] (uint256) paymentMethod --> 0: ether, 1: JOY, 2: token
+        data [24..63] (address) tokenAddress
+    */
     let data = '0x01234567';
     data += _.padStart('0', 15, '0');
     if (paymentMethod === 1) {
@@ -151,18 +150,18 @@ module.exports = {
 
     // withdraw input
     /*
-            inputs[0] (uint256) amount;
-            inputs[1] (uint256) gasFee;
-            inputs[2] (uint256) dataV
-            inputs[3] (bytes32) r
-            inputs[4] (bytes32) s
-            -----------------------------------
-            dataV[0 .. 7] (uint256) nonce --> doesnt used when withdraw
-            dataV[23..23] (uint256) paymentMethod --> 0: ether, 1: JOY, 2: token
-            dataV[24..24] (uint256) v --> 0:27, 1:28 should be uint8 when used
-            dataV[52..55] (uint256) tokenId
-            dataV[56..63] (uint256) userId
-        */
+        inputs[0] (uint256) amount;
+        inputs[1] (uint256) gasFee;
+        inputs[2] (uint256) dataV
+        inputs[3] (bytes32) r
+        inputs[4] (bytes32) s
+        -----------------------------------
+        dataV[0 .. 7] (uint256) nonce --> doesnt used when withdraw
+        dataV[23..23] (uint256) paymentMethod --> 0: ether, 1: JOY, 2: token
+        dataV[24..24] (uint256) v --> 0:27, 1:28 should be uint8 when used
+        dataV[52..55] (uint256) tokenId
+        dataV[56..63] (uint256) userId
+    */
 
     const tokenId = await joyso.tokenAddress2Id.call(tokenAddress);
     const userId = await joyso.userAddress2Id.call(userAddress);
@@ -192,14 +191,14 @@ module.exports = {
 
     // user1 sign the migrate msg
     /*
-            -----------------------------------
-            user migrate singature (uint256)
-            (this.address, newAddress, gasFee, data)
-            -----------------------------------
-            data [0 .. 7] (uint256) nonce --> does not used when migrate
-            data [23..23] (uint256) paymentMethod --> 0: ether, 1: JOY, 2: token
-            data [24..63] (address) tokenAddress
-        */
+        -----------------------------------
+        user migrate singature (uint256)
+        (this.address, newAddress, gasFee, data)
+        -----------------------------------
+        data [0 .. 7] (uint256) nonce --> does not used when migrate
+        data [23..23] (uint256) paymentMethod --> 0: ether, 1: JOY, 2: token
+        data [24..63] (address) tokenAddress
+    */
     let data = '0x01234567';
     data += _.padStart('0', 15, '0');
     if (paymentMethod === 1) {
@@ -224,18 +223,18 @@ module.exports = {
 
     // withdraw input
     /*
-            inputs[0] (uint256) amount;
-            inputs[1] (uint256) gasFee;
-            inputs[2] (uint256) dataV
-            inputs[3] (bytes32) r
-            inputs[4] (bytes32) s
-            -----------------------------------
-            dataV[0 .. 7] (uint256) nonce --> doesnt used when migrate
-            dataV[23..23] (uint256) paymentMethod --> 0: ether, 1: JOY, 2: token
-            dataV[24..24] (uint256) v --> 0:27, 1:28 should be uint8 when used
-            dataV[52..55] (uint256) tokenId
-            dataV[56..63] (uint256) userId
-        */
+        inputs[0] (uint256) amount;
+        inputs[1] (uint256) gasFee;
+        inputs[2] (uint256) dataV
+        inputs[3] (bytes32) r
+        inputs[4] (bytes32) s
+        -----------------------------------
+        dataV[0 .. 7] (uint256) nonce --> doesnt used when migrate
+        dataV[23..23] (uint256) paymentMethod --> 0: ether, 1: JOY, 2: token
+        dataV[24..24] (uint256) v --> 0:27, 1:28 should be uint8 when used
+        dataV[52..55] (uint256) tokenId
+        dataV[56..63] (uint256) userId
+    */
     const tokenId = await joyso.tokenAddress2Id.call(tokenAddress);
     const userId = await joyso.userAddress2Id.call(userAddress);
 
@@ -264,7 +263,7 @@ module.exports = {
     const tokenSellId = await joyso.tokenAddress2Id.call(tokenSell);
     const tokenBuyId = await joyso.tokenAddress2Id.call(tokenBuy);
     let token = tokenSell;
-    if (isBuy === ORDER_ISBUY) {
+    if (isBuy) {
       token = tokenBuy;
     }
     const userId = await joyso.userAddress2Id.call(user);
@@ -300,7 +299,7 @@ module.exports = {
     const userId = await joyso.userAddress2Id.call(user);
     let token = tokenSell;
     let baseToken = tokenBuy;
-    if (isBuy === ORDER_ISBUY) {
+    if (isBuy) {
       token = tokenBuy;
       baseToken = tokenSell;
     }

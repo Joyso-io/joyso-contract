@@ -11,7 +11,6 @@ contract('Joyso misc.js', function (accounts) {
   const joysoWallet = accounts[4];
   const ONE = web3.toWei(1, 'ether');
   const ETHER = '0x0000000000000000000000000000000000000000';
-  const ORDER_ISBUY = 1461501637330902918203684832716283019655932542976;
 
   it('it should fail if not admin send the match', async function () {
     const temp = await helper.setupEnvironment();
@@ -19,10 +18,10 @@ contract('Joyso misc.js', function (accounts) {
     const token = await TestToken.at(temp[1]);
 
     const inputs = [];
-    const order1 = await helper.generateOrder(200000000000000, 1000000, 1000000000000, 10, 20, 10, 0, ORDER_ISBUY, ETHER, token.address, user1, joyso.address);
-    Array.prototype.push.apply(inputs, order1);
-    const order2 = await helper.generateOrder(150, 15000000000, 1000000000000, 11, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address);
-    Array.prototype.push.apply(inputs, order2);
+    const order1 = await helper.generateOrder(200000000000000, 1000000, 1000000000000, 10, 20, 10, 0, true, ETHER, token.address, user1, joyso.address);
+    inputs.push(...order1);
+    const order2 = await helper.generateOrder(150, 15000000000, 1000000000000, 11, 20, 10, 0, false, token.address, ETHER, user2, joyso.address);
+    inputs.push(...order2);
 
     try {
       await joyso.matchByAdmin_TwH36(inputs, { from: user1 });
@@ -102,10 +101,10 @@ contract('Joyso misc.js', function (accounts) {
     const token = await TestToken.at(temp[1]);
 
     const inputs = [];
-    const order1 = await helper.generateOrder(200000000000000, 1000000, 1000000000000, 10, 20, 10, 0, ORDER_ISBUY, ETHER, token.address, user1, joyso.address);
-    Array.prototype.push.apply(inputs, order1);
-    const order2 = await helper.generateOrder(150, 15000000000, 1000000000000, 11, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address);
-    Array.prototype.push.apply(inputs, order2);
+    const order1 = await helper.generateOrder(200000000000000, 1000000, 1000000000000, 10, 20, 10, 0, true, ETHER, token.address, user1, joyso.address);
+    inputs.push(...order1);
+    const order2 = await helper.generateOrder(150, 15000000000, 1000000000000, 11, 20, 10, 0, false, token.address, ETHER, user2, joyso.address);
+    inputs.push(...order2);
     await joyso.addToAdmin(user1, true, { from: admin });
     await joyso.matchByAdmin_TwH36(inputs, { from: user1 });
   });
@@ -116,11 +115,11 @@ contract('Joyso misc.js', function (accounts) {
     const token = await TestToken.at(temp[1]);
 
     const inputs = [];
-    const order1 = await helper.generateOrder(200000000000000, 1000000, 1000000000000, 10, 20, 10, 0, ORDER_ISBUY, ETHER, token.address, user1, joyso.address);
+    const order1 = await helper.generateOrder(200000000000000, 1000000, 1000000000000, 10, 20, 10, 0, true, ETHER, token.address, user1, joyso.address);
 
-    const order2 = await helper.generateOrder(150, 15000000000, 1000000000000, 11, 20, 10, 0, 0, token.address, ETHER, user2, joyso.address);
-    Array.prototype.push.apply(inputs, order2);
-    Array.prototype.push.apply(inputs, order1);
+    const order2 = await helper.generateOrder(150, 15000000000, 1000000000000, 11, 20, 10, 0, false, token.address, ETHER, user2, joyso.address);
+    inputs.push(...order2);
+    inputs.push(...order1);
     await joyso.matchByAdmin_TwH36(inputs, { from: admin });
   });
 

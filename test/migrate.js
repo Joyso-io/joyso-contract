@@ -31,7 +31,7 @@ contract('test migrate.js', accounts => {
 
     const inputs = [ nc.address ];
     const user1Migrate = await helper.generateMigrate(helper.ether(0.02), 0, 0, user1, joyso.address, nc.address);
-    Array.prototype.push.apply(inputs, user1Migrate);
+    inputs.push(...user1Migrate);
 
     const user1NcEthBalance0 = await nc.getBalance(0, user1);
     await joyso.migrateByAdmin_DQV(inputs);
@@ -48,7 +48,7 @@ contract('test migrate.js', accounts => {
 
     const inputs = [ nc.address ];
     const user1Migrate = await helper.generateMigrate(helper.ether(0.02), 0, token.address, user1, joyso.address, nc.address);
-    Array.prototype.push.apply(inputs, user1Migrate);
+    inputs.push(...user1Migrate);
 
     const user1NcEthBalance0 = await nc.getBalance(token.address, user1);
     await joyso.migrateByAdmin_DQV(inputs);
@@ -65,7 +65,7 @@ contract('test migrate.js', accounts => {
 
     const inputs = [ nc.address ];
     const user1Migrate = await helper.generateMigrate(helper.ether(0), 0, token.address, user1, joyso.address, nc.address);
-    Array.prototype.push.apply(inputs, user1Migrate);
+    inputs.push(...user1Migrate);
 
     const joysoWalletEth = await joyso.getBalance(0, joysoWallet);
     const user1NcEthBalance0 = await nc.getBalance(token.address, user1);
@@ -85,7 +85,7 @@ contract('test migrate.js', accounts => {
 
     const inputs = [ nc.address ];
     const user1Migrate = await helper.generateMigrate(helper.ether(0.02), 0, token.address, user1, joyso.address, nc.address);
-    Array.prototype.push.apply(inputs, user1Migrate);
+    inputs.push(...user1Migrate);
 
     const joysoWalletEth = await joyso.getBalance(0, joysoWallet);
     const user1NcEthBalance0 = await nc.getBalance(token.address, user1);
@@ -106,7 +106,7 @@ contract('test migrate.js', accounts => {
 
     const inputs = [ nc.address ];
     const user1Migrate = await helper.generateMigrate(helper.ether(0.02), 1, token.address, user1, joyso.address, nc.address);
-    Array.prototype.push.apply(inputs, user1Migrate);
+    inputs.push(...user1Migrate);
 
     const joysoWalletEth = await joyso.getBalance(joy.address, joysoWallet);
     const user1NcEthBalance0 = await nc.getBalance(token.address, user1);
@@ -126,7 +126,7 @@ contract('test migrate.js', accounts => {
 
     const inputs = [ nc.address ];
     const user1Migrate = await helper.generateMigrate(helper.ether(0.02), 2, token.address, user1, joyso.address, nc.address);
-    Array.prototype.push.apply(inputs, user1Migrate);
+    inputs.push(...user1Migrate);
 
     const joysoWalletEth = await joyso.getBalance(token.address, joysoWallet);
     const user1NcEthBalance0 = await nc.getBalance(token.address, user1);
@@ -145,7 +145,7 @@ contract('test migrate.js', accounts => {
 
     let inputs = [ nc.address ];
     const user1Migrate = await helper.generateMigrate(helper.ether(0.02), 0, 0, user1, joyso.address, nc.address);
-    Array.prototype.push.apply(inputs, user1Migrate);
+    inputs.push(...user1Migrate);
 
     let tx = await joyso.migrateByAdmin_DQV.sendTransaction(inputs, { from: admin });
     let txReceipt = await web3.eth.getTransactionReceipt(tx);
@@ -154,8 +154,8 @@ contract('test migrate.js', accounts => {
     inputs = [ nc.address ];
     const user2Migrate = await helper.generateMigrate(helper.ether(0.02), 0, 0, user2, joyso.address, nc.address);
     const user3Migrate = await helper.generateMigrate(helper.ether(0.02), 0, 0, user3, joyso.address, nc.address);
-    Array.prototype.push.apply(inputs, user2Migrate);
-    Array.prototype.push.apply(inputs, user3Migrate);
+    inputs.push(...user2Migrate);
+    inputs.push(...user3Migrate);
     tx = await joyso.migrateByAdmin_DQV.sendTransaction(inputs, { from: admin });
     txReceipt = await web3.eth.getTransactionReceipt(tx);
     console.log('2 users migrate cost: ', txReceipt.gasUsed);
